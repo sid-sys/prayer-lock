@@ -152,6 +152,14 @@ class AppState extends ChangeNotifier {
   bool get isUnlocked =>
       unlockedUntil != null && unlockedUntil!.isAfter(DateTime.now());
 
+  /// Put the lock back on right away (end the open window early).
+  Future<void> lockNow() async {
+    unlockedUntil = null;
+    await _p.remove('until');
+    notifyListeners();
+    await _sync();
+  }
+
   // ---------- streak ----------
 
   Set<DateTime> get _days => history

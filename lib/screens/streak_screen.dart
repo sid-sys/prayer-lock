@@ -20,10 +20,12 @@ class StreakScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text('Your streak', style: h(20))),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
         children: [
-          Center(child: AnimatedFire(size: 120)),
+          Center(child: AnimatedFire(size: 110)),
           const SizedBox(height: 4),
           Center(child: Text('${s.streak}', style: h(72))),
           Center(
@@ -95,13 +97,15 @@ class StreakScreen extends StatelessWidget {
 
           Text('Badges 🏅', style: h(22)),
           const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
+          GridView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.95,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              mainAxisExtent: 215,
+            ),
             children: [
               for (final b in s.badges)
                 Card(
@@ -143,6 +147,7 @@ class StreakScreen extends StatelessWidget {
             child: const Text('Pray now 🙏'),
           ),
         ],
+      ),
       ),
     );
   }

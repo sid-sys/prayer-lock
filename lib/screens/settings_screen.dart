@@ -90,6 +90,17 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Card(
           child: ListTile(
+            leading: const Text('🔒', style: TextStyle(fontSize: 24)),
+            title: const Text('Lock my apps now'),
+            subtitle: Text(s.isUnlocked
+                ? 'Your apps are open. Tap to lock them again.'
+                : 'Your apps are already locked.'),
+            onTap: s.isUnlocked ? s.lockNow : null,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: ListTile(
             leading: const Icon(Icons.shield_outlined),
             title: const Text('Allow app blocking'),
             subtitle: const Text('Open the phone setting that lets us block apps'),

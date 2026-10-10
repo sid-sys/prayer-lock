@@ -22,69 +22,87 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
   GlobalKey<SliverAnimatedListState> _lk = GlobalKey();
   GlobalKey<SliverAnimatedListState> _uk = GlobalKey();
 
+  /// Apps whose switch is flipping right now (before they slide across).
+  final Set<String> _flipping = {};
+
   @override
   void initState() {
     super.initState();
-    BlockerService.installedApps().then((a) {
-      if (!mounted) return;
-      _all = a;
+    final ready = BlockerService.loaded;
+    if (ready != null) {
+      // List is already loaded: show it on the very first frame.
+      _all = ready;
       _loading = false;
-      _rebuild();
-    });
+      _fill();
+    } else {
+      BlockerService.installedApps().then((a) {
+        if (!mounted) return;
+        _all = a;
+        _loading = false;
+        _rebuild();
+      });
+    }
   }
 
-  /// Build both lists again from the saved state (search, bulk change, load).
-  void _rebuild() {
+  void _fill() {
     final s = context.read<AppState>();
     final q = _q.toLowerCase();
     final f = _all.where((a) => a.name.toLowerCase().contains(q)).toList();
-    setState(() {
-      _locked = f.where((a) => s.lockedApps.contains(a.packageName)).toList();
-      _unlocked = f.where((a) => !s.lockedApps.contains(a.packageName)).toList();
-      _lk = GlobalKey();
-      _uk = GlobalKey();
-    });
+    _locked = f.where((a) => s.lockedApps.contains(a.packageName)).toList();
+    _unlocked = f.where((a) => !s.lockedApps.contains(a.packageName)).toList();
+    _lk = GlobalKey();
+    _uk = GlobalKey();
   }
 
-  void _toggle(AppInfo a) {
+  /// Build both lists again from the saved state (search, bulk change, load).
+  void _rebuild() => setState(_fill);
+
+  Future<void> _toggle(AppInfo a) async {
+    if (_flipping.contains(a.packageName)) return;
     final s = context.read<AppState>();
     final wasLocked = _locked.contains(a);
+
+    // 1. Save right away and flip the switch where the app is now.
+    s.toggleApp(a.packageName);
+    setState(() => _flipping.add(a.packageName));
+
+    // 2. Let the switch animate, then slide the app to the other section.
+    await Future<void>.delayed(const Duration(milliseconds: 260));
+    if (!mounted) return;
+
     final from = wasLocked ? _locked : _unlocked;
     final to = wasLocked ? _unlocked : _locked;
     final fromKey = wasLocked ? _lk : _uk;
     final toKey = wasLocked ? _uk : _lk;
 
     final i = from.indexOf(a);
-    if (i < 0) return;
-    from.removeAt(i);
-    fromKey.currentState?.removeItem(
-      i,
-      (context, anim) => _slide(a, wasLocked, anim, leaving: true),
-      duration: const Duration(milliseconds: 280),
-    );
+    if (i >= 0) {
+      from.removeAt(i);
+      fromKey.currentState?.removeItem(
+        i,
+        (context, anim) => _slide(a, !wasLocked, anim, leaving: true),
+        duration: const Duration(milliseconds: 320),
+      );
 
-    // New locked app goes to the top so you can see it arrive.
-    var j = 0;
-    if (!wasLocked) {
-      j = 0;
-    } else {
-      j = to.indexWhere((x) => x.name.toLowerCase().compareTo(a.name.toLowerCase()) > 0);
-      if (j < 0) j = to.length;
+      // A newly locked app goes to the top so you see it arrive.
+      var j = 0;
+      if (wasLocked) {
+        j = to.indexWhere((x) => x.name.toLowerCase().compareTo(a.name.toLowerCase()) > 0);
+        if (j < 0) j = to.length;
+      }
+      to.insert(j, a);
+      toKey.currentState?.insertItem(j, duration: const Duration(milliseconds: 420));
     }
-    to.insert(j, a);
-    toKey.currentState?.insertItem(j, duration: const Duration(milliseconds: 380));
-
-    s.toggleApp(a.packageName); // saved in the background
-    setState(() {});
+    setState(() => _flipping.remove(a.packageName));
   }
 
   Widget _slide(AppInfo a, bool locked, Animation<double> anim, {bool leaving = false}) {
-    final curved = CurvedAnimation(parent: anim, curve: Curves.easeOutCubic);
+    final curved = CurvedAnimation(parent: anim, curve: Curves.easeInOutCubic);
     return SizeTransition(
       sizeFactor: curved,
       child: SlideTransition(
         position: Tween<Offset>(
-          begin: Offset(0, leaving ? -0.4 : 0.6),
+          begin: Offset(0, leaving ? (locked ? 0.8 : -0.8) : (locked ? -0.8 : 0.8)),
           end: Offset.zero,
         ).animate(curved),
         child: FadeTransition(opacity: curved, child: _tile(a, locked)),
@@ -93,25 +111,35 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
   }
 
   Widget _tile(AppInfo a, bool locked) {
+    // While flipping, show the new state in the old place.
+    final shown = _flipping.contains(a.packageName) ? !locked : locked;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      child: Material(
-        color: locked ? AppColors.mint : AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 240),
+        decoration: BoxDecoration(
+          color: shown ? AppColors.mint : AppColors.card,
           borderRadius: BorderRadius.circular(20),
-          onTap: () => _toggle(a),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            child: Row(
-              children: [
-                a.icon == null
-                    ? const Icon(Icons.apps, size: 40)
-                    : Image.memory(a.icon!, width: 40, height: 40),
-                const SizedBox(width: 14),
-                Expanded(child: Text(a.name, style: h(16), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                Switch(value: locked, onChanged: (_) => _toggle(a)),
-              ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () => _toggle(a),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                children: [
+                  a.icon == null
+                      ? const Icon(Icons.apps, size: 40)
+                      : Image.memory(a.icon!, width: 40, height: 40, gaplessPlayback: true),
+                  const SizedBox(width: 14),
+                  Expanded(
+                      child: Text(a.name,
+                          style: h(16), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  Switch(value: shown, onChanged: (_) => _toggle(a)),
+                ],
+              ),
             ),
           ),
         ),
@@ -125,10 +153,15 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
           child: Row(children: [
             Text('$emoji  $text', style: h(18)),
             const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.ink, borderRadius: BorderRadius.circular(12)),
-              child: Text('$n', style: h(13, color: Colors.white)),
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              child: Container(
+                key: ValueKey(n),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                    color: AppColors.ink, borderRadius: BorderRadius.circular(12)),
+                child: Text('$n', style: h(13, color: Colors.white)),
+              ),
             ),
           ]),
         ),
@@ -197,8 +230,7 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
           ),
         ),
         if (_loading)
-          const SliverFillRemaining(
-              hasScrollBody: false, child: Center(child: CircularProgressIndicator()))
+          const SliverToBoxAdapter(child: _Skeleton())
         else if (_all.isEmpty)
           SliverFillRemaining(
             hasScrollBody: false,
@@ -229,6 +261,79 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ],
+    );
+  }
+}
+
+/// Grey pulsing rows shown while the app list loads.
+class _Skeleton extends StatefulWidget {
+  const _Skeleton();
+  @override
+  State<_Skeleton> createState() => _SkeletonState();
+}
+
+class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixin {
+  late final AnimationController _c =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
+        ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) {
+        final tone = Color.lerp(const Color(0xFFFFE8D2), const Color(0xFFFFF8F0), _c.value)!;
+        Widget bar(double w, double hgt) => Container(
+              width: w,
+              height: hgt,
+              decoration: BoxDecoration(
+                  color: const Color(0xFFEBCDB0).withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(8)),
+            );
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              bar(110, 18),
+              const SizedBox(height: 12),
+              for (var i = 0; i < 8; i++)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  height: 64,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration:
+                      BoxDecoration(color: tone, borderRadius: BorderRadius.circular(20)),
+                  child: Row(children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFEBCDB0).withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    const SizedBox(width: 14),
+                    bar(120.0 + (i % 3) * 30, 14),
+                    const Spacer(),
+                    Container(
+                      width: 52,
+                      height: 30,
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFEBCDB0).withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(16)),
+                    ),
+                  ]),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

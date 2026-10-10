@@ -40,9 +40,11 @@ class InsightsScreen extends StatelessWidget {
       children: [
         Center(
           child: Container(
-            padding: const EdgeInsets.all(4),
-            decoration: const BoxDecoration(color: AppColors.ink, shape: BoxShape.circle),
-            child: const Pic('logo', size: 72),
+            width: 92,
+            height: 92,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+            child: const Pic('logo', size: 68),
           ),
         ),
         const SizedBox(height: 10),
@@ -53,7 +55,7 @@ class InsightsScreen extends StatelessWidget {
         Container(
           padding: const EdgeInsets.fromLTRB(14, 22, 14, 14),
           decoration: BoxDecoration(
-            color: AppColors.ink,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(28),
           ),
           child: Column(
@@ -62,7 +64,7 @@ class InsightsScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(left: 6, bottom: 14),
                 child: Text('How close you felt this week',
-                    style: h(15, color: Colors.white70, w: FontWeight.w600)),
+                    style: h(15, color: AppColors.soft, w: FontWeight.w600)),
               ),
               SizedBox(
                 height: 190,
@@ -130,13 +132,13 @@ class InsightsScreen extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         Container(
-          width: 34,
-          height: barH + 17,
+          width: 36,
+          height: barH + 18,
           alignment: Alignment.topCenter,
           decoration: BoxDecoration(
             color: prayed
-                ? moodColor(mood).withValues(alpha: 0.45)
-                : Colors.white.withValues(alpha: 0.12),
+                ? moodColor(mood).withValues(alpha: 0.55)
+                : const Color(0xFFF1E4D6),
             borderRadius: BorderRadius.circular(20),
           ),
           child: prayed
@@ -146,13 +148,13 @@ class InsightsScreen extends StatelessWidget {
                 )
               : const Padding(
                   padding: EdgeInsets.only(top: 7),
-                  child: Text('·', style: TextStyle(color: Colors.white38, fontSize: 18)),
+                  child: Text('·', style: TextStyle(color: Color(0xFFBFA68E), fontSize: 18)),
                 ),
         ),
         const SizedBox(height: 8),
         Text(DateFormat.E().format(d),
             style: h(12,
-                color: isToday ? Colors.white : Colors.white60,
+                color: isToday ? AppColors.ink : AppColors.soft,
                 w: isToday ? FontWeight.w800 : FontWeight.w500)),
       ],
     );
