@@ -3,7 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'dart:io' show Platform;
+import 'dart:async';
+import 'dart:io' show File, Platform;
 import 'admin/admin_dashboard.dart';
 import 'config.dart';
 import 'firebase_options.dart';
@@ -134,10 +135,35 @@ class _Gate extends StatefulWidget {
 
 class _GateState extends State<_Gate> {
   late final Stream<User?> _auth = FirebaseAuth.instance.authStateChanges();
+  Timer? _shotTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (kShotMode) {
+      // Screenshot mode: the workflow writes the screen name into a file on
+      // the Mac (the simulator can read it). We look at it twice a second.
+      _shotTimer = Timer.periodic(const Duration(milliseconds: 400), (_) {
+        try {
+          final name = File('/tmp/prayerlock_shot.txt').readAsStringSync().trim();
+          if (name.isNotEmpty && name != _shot && mounted) {
+            debugPrint('SHOT -> $name');
+            setState(() => _shot = name);
+          }
+        } catch (_) {}
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _shotTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (kShotMode) return _shotScreen();
+    if (kShotMode) return KeyedSubtree(key: ValueKey(_shot), child: _shotScreen());
     final onboarded = context.select<AppState, bool>((s) => s.onboarded);
     final entitled = context.select<AppState, bool>((s) => s.entitled);
     final committed = context.select<AppState, bool>((s) => s.committed);

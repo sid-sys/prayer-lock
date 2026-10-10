@@ -64,12 +64,16 @@ jobs:
           APP="com.coreinteractive.prayerLock"
           mkdir -p screenshots
 
+          # The app watches this file and switches to the screen written in it.
+          xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
+          echo home > /tmp/prayerlock_shot.txt
+          xcrun simctl launch "$UDID" "$APP"
+          sleep 12
+
           shoot () {
             NAME="$1"
-            xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
-            # SIMCTL_CHILD_ makes the variable reach the app as SHOT=<screen>
-            SIMCTL_CHILD_SHOT="$NAME" xcrun simctl launch "$UDID" "$APP"
-            sleep 9
+            echo "$NAME" > /tmp/prayerlock_shot.txt
+            sleep 5
             xcrun simctl io "$UDID" screenshot "screenshots/$NAME.png"
             echo "saved $NAME"
           }
