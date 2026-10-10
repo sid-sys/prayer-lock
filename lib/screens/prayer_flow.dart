@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/verses.dart';
+import '../services/blocker_service.dart';
 import '../services/notification_service.dart';
 import '../services/prayer_service.dart';
 import '../state/app_state.dart';
@@ -13,7 +14,10 @@ enum _Step { mood, feeling, prayer, schedule, done }
 /// kind: 'morning', 'night' or 'gate'.
 class PrayerFlow extends StatefulWidget {
   final String kind;
-  const PrayerFlow({super.key, this.kind = 'gate'});
+
+  /// Package of the locked app the user wanted. Opened after the prayer.
+  final String? openAfter;
+  const PrayerFlow({super.key, this.kind = 'gate', this.openAfter});
   @override
   State<PrayerFlow> createState() => _PrayerFlowState();
 }
@@ -287,7 +291,12 @@ class _PrayerFlowState extends State<PrayerFlow> {
         ],
         const SizedBox(height: 36),
         FilledButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Amen 🙌')),
+            onPressed: () {
+              Navigator.pop(context);
+              final pkg = widget.openAfter;
+              if (pkg != null) BlockerService.launchApp(pkg);
+            },
+            child: Text(widget.openAfter != null ? 'Amen. Open my app 🙌' : 'Amen 🙌')),
       ],
     );
   }

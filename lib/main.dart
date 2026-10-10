@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
+import 'screens/prayer_flow.dart';
 import 'screens/onboarding.dart';
 import 'screens/paywall.dart';
 import 'screens/shell.dart';
@@ -24,12 +25,44 @@ Future<void> main() async {
   runApp(ChangeNotifierProvider.value(value: state, child: const PrayerLockApp()));
 }
 
-class PrayerLockApp extends StatelessWidget {
+final navigatorKey = GlobalKey<NavigatorState>();
+
+class PrayerLockApp extends StatefulWidget {
   const PrayerLockApp({super.key});
+  @override
+  State<PrayerLockApp> createState() => _PrayerLockAppState();
+}
+
+class _PrayerLockAppState extends State<PrayerLockApp> {
+  bool _flowOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // A locked app was opened: show the prayer first.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      BlockerService.listenBlocked(_onBlocked);
+    });
+  }
+
+  void _onBlocked(String pkg) {
+    final nav = navigatorKey.currentState;
+    if (nav == null || _flowOpen) return;
+    // Only after onboarding, paywall and sign in are done.
+    if (FirebaseAuth.instance.currentUser == null) return;
+    final s = context.read<AppState>();
+    if (!s.onboarded || !s.entitled) return;
+    _flowOpen = true;
+    nav
+        .push(MaterialPageRoute(
+            builder: (_) => PrayerFlow(kind: 'gate', openAfter: pkg)))
+        .whenComplete(() => _flowOpen = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'Prayer Lock',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),

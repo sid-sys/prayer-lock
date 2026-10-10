@@ -49,6 +49,26 @@ class BlockerService {
     } catch (_) {}
   }
 
+  /// Called when a locked app was opened and Prayer Lock came to the front.
+  static void listenBlocked(void Function(String pkg) onBlocked) {
+    _ch.setMethodCallHandler((call) async {
+      if (call.method == 'blocked' && call.arguments is String) {
+        onBlocked(call.arguments as String);
+      }
+    });
+    // App was started by a locked app (not running before)?
+    _ch.invokeMethod<String>('consumeBlocked').then((pkg) {
+      if (pkg != null) onBlocked(pkg);
+    }).catchError((_) {});
+  }
+
+  /// Open an app by package name (after the user prayed).
+  static Future<void> launchApp(String pkg) async {
+    try {
+      await _ch.invokeMethod('launchApp', {'package': pkg});
+    } catch (_) {}
+  }
+
   static Future<bool> hasPermission() async {
     try {
       return await _ch.invokeMethod<bool>('hasPermission') ?? false;

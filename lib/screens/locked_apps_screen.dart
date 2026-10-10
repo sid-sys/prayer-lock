@@ -67,7 +67,7 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
     setState(() => _flipping.add(a.packageName));
 
     // 2. Let the switch animate, then slide the app to the other section.
-    await Future<void>.delayed(const Duration(milliseconds: 260));
+    await Future<void>.delayed(const Duration(milliseconds: 750));
     if (!mounted) return;
 
     final from = wasLocked ? _locked : _unlocked;
@@ -81,7 +81,7 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
       fromKey.currentState?.removeItem(
         i,
         (context, anim) => _slide(a, !wasLocked, anim, leaving: true),
-        duration: const Duration(milliseconds: 320),
+        duration: const Duration(milliseconds: 450),
       );
 
       // A newly locked app goes to the top so you see it arrive.
@@ -91,7 +91,7 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
         if (j < 0) j = to.length;
       }
       to.insert(j, a);
-      toKey.currentState?.insertItem(j, duration: const Duration(milliseconds: 420));
+      toKey.currentState?.insertItem(j, duration: const Duration(milliseconds: 550));
     }
     setState(() => _flipping.remove(a.packageName));
   }
@@ -116,7 +116,8 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 240),
+        duration: const Duration(milliseconds: 520),
+        curve: Curves.easeInOutCubic,
         decoration: BoxDecoration(
           color: shown ? AppColors.mint : AppColors.card,
           borderRadius: BorderRadius.circular(20),
@@ -137,7 +138,7 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
                   Expanded(
                       child: Text(a.name,
                           style: h(16), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  Switch(value: shown, onChanged: (_) => _toggle(a)),
+                  _SmoothSwitch(value: shown),
                 ],
               ),
             ),
@@ -334,6 +335,45 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
           ),
         );
       },
+    );
+  }
+}
+
+/// Switch with a slow, smooth flip (the normal one is too quick).
+class _SmoothSwitch extends StatelessWidget {
+  final bool value;
+  const _SmoothSwitch({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    const d = Duration(milliseconds: 520);
+    const c = Curves.easeInOutCubic;
+    return AnimatedContainer(
+      duration: d,
+      curve: c,
+      width: 56,
+      height: 32,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: value ? AppColors.ink : Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.ink, width: 2.5),
+      ),
+      child: AnimatedAlign(
+        duration: d,
+        curve: c,
+        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+        child: AnimatedContainer(
+          duration: d,
+          curve: c,
+          width: value ? 20 : 16,
+          height: value ? 20 : 16,
+          decoration: BoxDecoration(
+            color: value ? Colors.white : AppColors.ink,
+            shape: BoxShape.circle,
+          ),
+        ),
+      ),
     );
   }
 }
