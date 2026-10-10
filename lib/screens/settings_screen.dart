@@ -23,7 +23,9 @@ class SettingsScreen extends StatelessWidget {
             leading: const CircleAvatar(
                 backgroundColor: AppColors.gold,
                 child: Icon(Icons.person, color: Colors.black)),
-            title: Text(user?.displayName ?? user?.email ?? 'Guest'),
+            title: Text((user?.displayName?.isNotEmpty ?? false)
+                ? user!.displayName!
+                : ((user?.email?.isNotEmpty ?? false) ? user!.email! : 'Guest 🙏')),
             subtitle: Text('${s.streak} day streak'),
           ),
         ),

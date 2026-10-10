@@ -70,7 +70,7 @@ class StreakScreen extends StatelessWidget {
 
           // next milestone
           PastelCard(
-            color: AppColors.peach,
+            color: AppColors.yellow,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

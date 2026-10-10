@@ -129,7 +129,16 @@ class _PrayerFlowState extends State<PrayerFlow> {
 
   // 2. feeling cards
   Widget _feelingStep() {
-    const colors = [AppColors.blue, AppColors.peach, AppColors.mint, AppColors.pink];
+    const colors = [
+      AppColors.blue,
+      AppColors.yellow,
+      AppColors.mint,
+      AppColors.pink,
+      Color(0xFFC9A6FF), // lavender
+      Color(0xFFB8E986), // lime
+      Color(0xFF8FD8FF), // sky
+      Color(0xFFFFB3D9), // rose
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

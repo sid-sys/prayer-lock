@@ -168,7 +168,7 @@ class _OnboardingState extends State<Onboarding> {
   Widget _habitPage() {
     final options = [
       ('📱', 'Often', 'My phone wins most days', AppColors.blue),
-      ('😅', 'Sometimes', 'I get distracted and forget', AppColors.peach),
+      ('😅', 'Sometimes', 'I get distracted and forget', AppColors.yellow),
       ('🌿', 'Rarely', 'I want to feel close to Him again', AppColors.mint),
     ];
     return Column(
@@ -352,7 +352,7 @@ class _OnboardingState extends State<Onboarding> {
           ),
           const SizedBox(height: 12),
           PastelCard(
-            color: !_blockAll ? AppColors.peach : AppColors.card,
+            color: !_blockAll ? AppColors.yellow : AppColors.card,
             onTap: () => setState(() => _blockAll = false),
             child: Row(children: [
               const Text('⏳', style: TextStyle(fontSize: 28)),
