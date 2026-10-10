@@ -9,6 +9,7 @@ import '../theme.dart';
 import 'legal_screen.dart';
 
 /// Hard paywall: no close button. Style follows the reference screens.
+/// The whole page scrolls, so nothing is ever cut off on small phones.
 class Paywall extends StatefulWidget {
   const Paywall({super.key});
   @override
@@ -19,6 +20,9 @@ class _PaywallState extends State<Paywall> {
   String _plan = 'yearly';
   bool _busy = false;
 
+  static const _orange = Color(0xFFFF9500);
+  static const _ink = Color(0xFF1C1B22);
+
   @override
   void initState() {
     super.initState();
@@ -26,9 +30,6 @@ class _PaywallState extends State<Paywall> {
       if (mounted) context.read<AppState>().logPaywallView();
     });
   }
-
-  static const _orange = Color(0xFFFF9500);
-  static const _ink = Color(0xFF1C1B22);
 
   Future<void> _start() async {
     setState(() => _busy = true);
@@ -53,6 +54,9 @@ class _PaywallState extends State<Paywall> {
     }
   }
 
+  void _legal(LegalDoc d) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => LegalScreen(d)));
+
   @override
   Widget build(BuildContext context) {
     final bill = DateTime.now().add(const Duration(days: 7));
@@ -64,149 +68,129 @@ class _PaywallState extends State<Paywall> {
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.dark,
           child: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+              children: [
+                Text('Start your 7-day FREE trial to continue 🙏',
+                    textAlign: TextAlign.center, style: h(27, color: Colors.black)),
+                const SizedBox(height: 18),
+
+                // Timeline (kept compact so it is always visible)
+                _step(Icons.lock_open, _orange, 'Today',
+                    'Unlock morning and night prayer, pray-before-you-scroll, streaks and more.'),
+                _step(Icons.notifications_active_outlined, _orange, 'In 5 Days - Reminder',
+                    "We'll remind you that your trial is ending soon, if you've allowed notifications."),
+                _step(Icons.workspace_premium, Colors.black, 'In 7 Days - Billing Starts',
+                    "You'll be charged on $billText unless you cancel anytime.",
+                    last: true),
+                const SizedBox(height: 16),
+
+                // Plans (compact)
+                _planCard(
+                  id: 'yearly',
+                  banner: '7 DAYS FREE',
+                  title: 'Yearly · save 75%',
+                  price: '${PurchaseService.yearlyPerMonth}/mo',
+                  sub: '${PurchaseService.yearlyPrice} billed annually',
+                ),
+                const SizedBox(height: 10),
+                _planCard(
+                  id: 'monthly',
+                  title: 'Monthly',
+                  price: '${PurchaseService.monthlyPrice}/mo',
+                ),
+                const SizedBox(height: 12),
+
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Start your 7-day FREE trial to continue 🙏',
-                        textAlign: TextAlign.center,
-                        style: h(32, color: Colors.black)),
-                    const SizedBox(height: 28),
-                    _step(Icons.lock_open, _orange, 'Today',
-                        'Unlock morning and night prayer, pray-before-you-scroll, streaks and more.',
-                        first: true),
-                    _step(Icons.notifications_active_outlined, _orange,
-                        'In 5 Days - Reminder',
-                        "We'll remind you that your trial is ending soon, if you've allowed notifications."),
-                    _step(Icons.workspace_premium, Colors.black,
-                        'In 7 Days - Billing Starts',
-                        "You'll be charged on $billText unless you cancel anytime.",
-                        last: true),
+                    Icon(Icons.check, size: 20, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text('No Payment Due Now',
+                        style: TextStyle(
+                            fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black)),
                   ],
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 4, 24, 12),
-                child: Column(
+                const SizedBox(height: 10),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _ink,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(56),
+                  ),
+                  onPressed: _busy ? null : _start,
+                  child: _busy
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : const Text('Start My 7-Day Free Trial'),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  _plan == 'yearly'
+                      ? '7 days free, then ${PurchaseService.yearlyPrice} per year. Auto-renews unless you cancel. Cancel in the app store.'
+                      : '7 days free, then ${PurchaseService.monthlyPrice} per month. Auto-renews unless you cancel. Cancel in the app store.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    
-                    _planCard(
-                      id: 'yearly',
-                      banner: '7 DAYS FREE',
-                      title: 'Save 75% yearly',
-                      price: '${PurchaseService.yearlyPerMonth}/mo',
-                      sub: '${PurchaseService.yearlyPrice} billed annually',
-                    ),
-                    const SizedBox(height: 12),
-                    _planCard(
-                      id: 'monthly',
-                      title: 'Monthly',
-                      price: '${PurchaseService.monthlyPrice}/mo',
-                    ),
-                    const SizedBox(height: 12),
-                    const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.check, size: 22, color: Colors.black),
-                        SizedBox(width: 8),
-                        Text('No Payment Due Now',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.black)),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    FilledButton(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: _ink,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(60),
-                      ),
-                      onPressed: _busy ? null : _start,
-                      child: _busy
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Text('Start My 7-Day Free Trial'),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _plan == 'yearly'
-                          ? '7 days free, then ${PurchaseService.yearlyPrice} per year. Billed annually. Plan auto-renews unless you cancel. Cancel in the app store.'
-                          : '7 days free, then ${PurchaseService.monthlyPrice} per month. Plan auto-renews unless you cancel. Cancel in the app store.',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 13, color: Colors.black54, height: 1.35),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        TextButton(
-                            onPressed: () => Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const LegalScreen(LegalDoc.terms))),
-                            child: const Text('Terms', style: TextStyle(color: Colors.black45))),
-                        TextButton(
-                            onPressed: () => Navigator.push(context,
-                                MaterialPageRoute(builder: (_) => const LegalScreen(LegalDoc.privacy))),
-                            child: const Text('Privacy', style: TextStyle(color: Colors.black45))),
-                        TextButton(onPressed: _restore, child: const Text('Restore', style: TextStyle(color: Colors.black45))),
-                      ],
-                    ),
+                    _link('Terms', () => _legal(LegalDoc.terms)),
+                    _link('Privacy', () => _legal(LegalDoc.privacy)),
+                    _link('Restore', _restore),
                     if (kMockBuild)
-                      TextButton(
-                        onPressed: () => context.read<AppState>().testSkipPaywall(),
-                        child: const Text('Skip paywall (test build only)',
-                            style: TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.w700)),
-                      ),
+                      _link('Skip (test)', () => context.read<AppState>().testSkipPaywall(),
+                          color: const Color(0xFFE53935)),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );
   }
 
-  Widget _step(IconData icon, Color color, String title, String body,
-      {bool first = false, bool last = false}) {
+  Widget _link(String t, VoidCallback onTap, {Color color = Colors.black45}) => TextButton(
+        style: TextButton.styleFrom(
+            minimumSize: const Size(0, 36), padding: const EdgeInsets.symmetric(horizontal: 10)),
+        onPressed: onTap,
+        child: Text(t, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w600)),
+      );
+
+  Widget _step(IconData icon, Color color, String title, String body, {bool last = false}) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SizedBox(
-            width: 52,
+            width: 40,
             child: Column(
               children: [
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-                  child: Icon(icon, color: Colors.white, size: 26),
+                  child: Icon(icon, color: Colors.white, size: 21),
                 ),
                 if (!last)
-                  Expanded(
-                    child: Container(
-                      width: 12,
-                      color: const Color(0xFFFFD39C),
-                    ),
-                  ),
+                  Expanded(child: Container(width: 8, color: const Color(0xFFFFD39C))),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(bottom: last ? 0 : 22),
+              padding: EdgeInsets.only(bottom: last ? 0 : 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: h(22, color: Colors.black, w: FontWeight.w600)),
-                  const SizedBox(height: 2),
+                  Text(title, style: h(18, color: Colors.black, w: FontWeight.w600)),
+                  const SizedBox(height: 1),
                   Text(body,
-                      style: const TextStyle(fontSize: 16, color: Colors.black54, height: 1.3)),
+                      style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.25)),
                 ],
               ),
             ),
@@ -228,7 +212,7 @@ class _PaywallState extends State<Paywall> {
       onTap: () => setState(() => _plan = id),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(26),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: on ? Colors.black : Colors.black26, width: on ? 3 : 2.5),
         ),
         clipBehavior: Clip.antiAlias,
@@ -238,37 +222,38 @@ class _PaywallState extends State<Paywall> {
               Container(
                 width: double.infinity,
                 color: on ? Colors.black : Colors.black26,
-                padding: const EdgeInsets.symmetric(vertical: 6),
+                padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text(banner,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
                 children: [
                   Container(
-                    width: 44,
-                    height: 44,
+                    width: 32,
+                    height: 32,
                     decoration: BoxDecoration(
                       color: on ? Colors.black : Colors.transparent,
                       shape: BoxShape.circle,
-                      border: Border.all(color: on ? Colors.black : Colors.black26, width: 3),
+                      border: Border.all(color: on ? Colors.black : Colors.black26, width: 2.5),
                     ),
-                    child: on ? const Icon(Icons.check, color: Colors.white) : null,
+                    child: on ? const Icon(Icons.check, color: Colors.white, size: 19) : null,
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(title, style: h(20, color: Colors.black)),
+                        Text(title, style: h(17, color: Colors.black)),
                         if (sub != null)
-                          Text(sub, style: const TextStyle(fontSize: 16, color: Colors.black54)),
+                          Text(sub, style: const TextStyle(fontSize: 13, color: Colors.black54)),
                       ],
                     ),
                   ),
-                  Text(price, style: h(18, color: Colors.black54, w: FontWeight.w600)),
+                  Text(price, style: h(16, color: Colors.black54, w: FontWeight.w600)),
                 ],
               ),
             ),

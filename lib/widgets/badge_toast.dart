@@ -77,9 +77,9 @@ class _BadgeToasterState extends State<BadgeToaster> {
           AnimatedPositioned(
             duration: const Duration(milliseconds: 520),
             curve: _visible ? Curves.easeOutBack : Curves.easeInCubic,
-            top: _visible ? top + 10 : -190,
-            left: 14,
-            right: 14,
+            top: _visible ? top + 8 : -110,
+            left: 0,
+            right: 0,
             child: GestureDetector(
               onTap: _hide,
               onVerticalDragEnd: (d) {
@@ -87,7 +87,7 @@ class _BadgeToasterState extends State<BadgeToaster> {
               },
               child: Material(
                 color: Colors.transparent,
-                child: _card(_badge!),
+                child: Center(child: _card(_badge!)),
               ),
             ),
           ),
@@ -95,49 +95,42 @@ class _BadgeToasterState extends State<BadgeToaster> {
     );
   }
 
+  /// Small pill, about the size of a button.
   Widget _card(PrayerBadge b) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 16, 12),
+      constraints: const BoxConstraints(maxWidth: 300),
+      padding: const EdgeInsets.fromLTRB(8, 6, 18, 6),
       decoration: BoxDecoration(
         color: AppColors.ink,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3), blurRadius: 24, offset: const Offset(0, 8)),
+              color: Colors.black.withValues(alpha: 0.28), blurRadius: 16, offset: const Offset(0, 5)),
         ],
-        border: Border.all(color: AppColors.yellow.withValues(alpha: 0.7), width: 2),
+        border: Border.all(color: AppColors.yellow.withValues(alpha: 0.8), width: 1.5),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           TweenAnimationBuilder<double>(
             tween: Tween(begin: 0.4, end: 1),
             duration: const Duration(milliseconds: 700),
             curve: Curves.elasticOut,
-            builder: (context, v, child) =>
-                Transform.scale(scale: v, child: child),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Pic(b.image, size: 70),
-                const Positioned(right: -6, top: -6, child: Text('✨', style: TextStyle(fontSize: 18))),
-              ],
-            ),
+            builder: (context, v, child) => Transform.scale(scale: v, child: child),
+            child: Pic(b.image, size: 42),
           ),
-          const SizedBox(width: 14),
-          Expanded(
+          const SizedBox(width: 10),
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text('🏅 BADGE UNLOCKED',
-                    style: h(11, color: AppColors.yellow, w: FontWeight.w800)),
-                const SizedBox(height: 2),
-                Text(b.title, style: h(19, color: Colors.white)),
-                const SizedBox(height: 2),
-                Text(b.quip,
-                    maxLines: 2,
+                    style: h(9, color: AppColors.yellow, w: FontWeight.w800)),
+                Text(b.title,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: h(13, color: Colors.white70, w: FontWeight.w500)),
+                    style: h(15, color: Colors.white)),
               ],
             ),
           ),

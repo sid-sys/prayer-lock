@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/blocker_service.dart';
@@ -13,8 +14,8 @@ class Onboarding extends StatefulWidget {
   State<Onboarding> createState() => _OnboardingState();
 }
 
-class _OnboardingState extends State<Onboarding> {
-  static const _count = 6;
+class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
+  static const _count = 7;
   int _i = 0;
   String? _habit;
   final Set<String> _goals = {};
@@ -24,6 +25,7 @@ class _OnboardingState extends State<Onboarding> {
 
   // Page colors: pastel screens use dark ink, dark screens use white.
   static const _bgs = [
+    AppColors.bg,
     AppColors.bg,
     AppColors.bg,
     AppColors.bg,
@@ -54,7 +56,6 @@ class _OnboardingState extends State<Onboarding> {
       morning: _morning.hour * 60 + _morning.minute,
       night: _night.hour * 60 + _night.minute,
     );
-    await NotificationService.askPermission();
     await s.rescheduleReminders();
   }
 
@@ -94,7 +95,17 @@ class _OnboardingState extends State<Onboarding> {
                 Expanded(
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 300),
-                    child: KeyedSubtree(key: ValueKey(_i), child: _page()),
+                    child: KeyedSubtree(
+                      key: ValueKey(_i),
+                      child: LayoutBuilder(
+                        builder: (context, bc) => SingleChildScrollView(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(minHeight: bc.maxHeight),
+                            child: _page(),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -114,7 +125,8 @@ class _OnboardingState extends State<Onboarding> {
       'That is what I need 💛',
       'Build my daily routine',
       'Continue',
-      _blockAll ? 'Set up my focus 🔒' : 'Continue to my plan',
+      _blockAll ? 'Set up my focus 🔒' : 'Continue',
+      'Continue to my plan',
     ];
     final enabled = !(_i == 1 && _habit == null) && !(_i == 4 && _goals.isEmpty);
     return FilledButton(
@@ -148,10 +160,137 @@ class _OnboardingState extends State<Onboarding> {
         return _rhythm();
       case 4:
         return _focus();
-      default:
+      case 5:
         return _distractions();
+      default:
+        return _permissions();
     }
   }
+
+  // ---- permissions ----
+  bool _notifOk = false;
+  bool _a11yOk = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _checkPerms();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Back from the phone settings: look again.
+    if (state == AppLifecycleState.resumed) _checkPerms();
+  }
+
+  Future<void> _checkPerms() async {
+    final n = await NotificationService.areEnabled();
+    final a = await BlockerService.hasPermission();
+    if (mounted) setState(() {
+          _notifOk = n;
+          _a11yOk = a;
+        });
+  }
+
+  Future<void> _askNotifications() async {
+    await NotificationService.askPermission();
+    await _checkPerms();
+  }
+
+  Widget _permCard({
+    required Color color,
+    required String emoji,
+    required String title,
+    required String why,
+    required bool ok,
+    required String action,
+    required VoidCallback onTap,
+  }) =>
+      PastelCard(
+        color: color,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Text(emoji, style: const TextStyle(fontSize: 30)),
+              const SizedBox(width: 12),
+              Expanded(child: Text(title, style: h(20, color: AppColors.ink))),
+              if (ok) const Icon(Icons.check_circle, color: AppColors.ink),
+            ]),
+            const SizedBox(height: 8),
+            Text(why, style: h(14, color: AppColors.ink, w: FontWeight.w500).copyWith(height: 1.35)),
+            const SizedBox(height: 12),
+            if (ok)
+              Text('Allowed ✓', style: h(15, color: AppColors.ink, w: FontWeight.w800))
+            else
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.ink,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(46),
+                ),
+                onPressed: onTap,
+                child: Text(action),
+              ),
+          ],
+        ),
+      );
+
+  Widget _permissions() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Two quick permissions 🔐', style: h(28, color: _fg)),
+          const SizedBox(height: 6),
+          Text('So Prayer Lock can do its job. You stay in control and can change them any time in Profile.',
+              style: h(15, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
+          const SizedBox(height: 16),
+          _permCard(
+            color: AppColors.blue,
+            emoji: '🔔',
+            title: 'Notifications',
+            why:
+                'Why: to remind you at your morning and night prayer times. Your prayers and feelings are never shown in a notification.',
+            ok: _notifOk,
+            action: 'Allow notifications',
+            onTap: _askNotifications,
+          ),
+          const SizedBox(height: 12),
+          if (defaultTargetPlatform == TargetPlatform.android)
+            _permCard(
+              color: AppColors.mint,
+              emoji: '📵',
+              title: 'App blocking',
+              why:
+                  'Why: to notice when you open an app YOU chose to lock, so we can show your prayer first. Android asks you to turn on Prayer Lock in Accessibility. We never read your screen, messages or passwords, and we share nothing.',
+              ok: _a11yOk,
+              action: 'Open Accessibility settings',
+              onTap: BlockerService.requestPermission,
+            )
+          else
+            PastelCard(
+              color: AppColors.mint,
+              child: Row(children: [
+                const Text('📵', style: TextStyle(fontSize: 30)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                      'App blocking: Apple will ask for Screen Time access the first time you lock apps.',
+                      style: h(14, color: AppColors.ink, w: FontWeight.w600)),
+                ),
+              ]),
+            ),
+          const SizedBox(height: 12),
+          Text('Not now? You can still continue. App blocking and reminders just stay off until you allow them.',
+              style: h(12, color: _fg.withValues(alpha: 0.6), w: FontWeight.w500)),
+        ],
+      );
 
   // 1. hook
   Widget _hook() => Column(

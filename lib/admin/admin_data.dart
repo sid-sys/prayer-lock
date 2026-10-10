@@ -150,13 +150,13 @@ class AdminStats {
         .where((p) => p.at.isAfter(now!.subtract(const Duration(days: 30))))
         .fold(0.0, (a, p) => a + p.amount);
 
-    // Costs we pay: AI prayers (about $0.0004 each) and servers (about $25 a month).
+    // Costs we pay: AI prayers (about $0.0001 each) and fixed fees (about $12 a month).
     final prayers = users.fold(0, (a, u) => a + u.prayerCount);
     final firstJoin = users.isEmpty
         ? now
         : users.map((u) => u.joinedAt).reduce((a, b) => a.isBefore(b) ? a : b);
     final months = max(1.0, now.difference(firstJoin).inDays / 30);
-    final costs = prayers * 0.0004 + months * 25;
+    final costs = prayers * 0.0001 + months * 12;
 
     return AdminStats(
       totalUsers: users.length,

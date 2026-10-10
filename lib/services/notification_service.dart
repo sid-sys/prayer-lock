@@ -51,6 +51,23 @@ class NotificationService {
     }
   }
 
+  /// Are notifications allowed right now?
+  static Future<bool> areEnabled() async {
+    await init();
+    try {
+      final a = await _plugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.areNotificationsEnabled();
+      if (a != null) return a;
+      final i = await _plugin
+          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          ?.checkPermissions();
+      return i?.isEnabled ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
   static NotificationDetails get _details => const NotificationDetails(
         android: AndroidNotificationDetails(
           'daily_prayer',
