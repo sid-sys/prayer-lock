@@ -6,13 +6,15 @@ import 'locked_apps_screen.dart';
 import 'settings_screen.dart';
 
 class Shell extends StatefulWidget {
-  const Shell({super.key});
+  /// Start on this tab (used by screenshot mode).
+  final int initialIndex;
+  const Shell({super.key, this.initialIndex = 0});
   @override
   State<Shell> createState() => _ShellState();
 }
 
 class _ShellState extends State<Shell> {
-  int _i = 0;
+  late int _i = widget.initialIndex;
 
   static const _pages = <Widget>[
     HomeScreen(),

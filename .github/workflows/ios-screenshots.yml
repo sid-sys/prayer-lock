@@ -1,0 +1,105 @@
+name: iOS simulator screenshots
+
+# Builds a special "screenshot mode" app, boots an iPhone simulator,
+# opens each screen with sample data and saves a picture of it.
+# Run it by hand: GitHub > Actions > "iOS simulator screenshots" > Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "Simulator to use (part of its name)"
+        default: "iPhone 16 Pro Max"
+
+jobs:
+  screenshots:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - run: flutter pub get
+
+      - name: Build the app for the simulator (screenshot mode)
+        run: flutter build ios --simulator --debug --dart-define=SHOTMODE=true
+
+      - name: Boot an iPhone simulator
+        id: sim
+        run: |
+          set -euo pipefail
+          WANT="${{ github.event.inputs.device || 'iPhone 16 Pro Max' }}"
+          xcrun simctl list devices available
+          # take the first available device whose name matches
+          UDID=$(xcrun simctl list devices available | grep -F "$WANT (" | head -1 | grep -oE '[0-9A-F-]{36}' || true)
+          if [ -z "$UDID" ]; then
+            # fall back to any Pro Max, then any iPhone
+            UDID=$(xcrun simctl list devices available | grep -E "iPhone .*Pro Max \(" | tail -1 | grep -oE '[0-9A-F-]{36}' || true)
+          fi
+          if [ -z "$UDID" ]; then
+            UDID=$(xcrun simctl list devices available | grep -E "iPhone " | tail -1 | grep -oE '[0-9A-F-]{36}')
+          fi
+          echo "Using simulator $UDID"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          # clean status bar: 9:41, full battery and signal
+          xcrun simctl status_bar "$UDID" override --time "9:41" \
+            --batteryState charged --batteryLevel 100 \
+            --cellularMode active --cellularBars 4 --wifiBars 3
+          xcrun simctl ui "$UDID" appearance light
+
+      - name: Install the app
+        run: |
+          set -euo pipefail
+          xcrun simctl install "${{ steps.sim.outputs.udid }}" build/ios/iphonesimulator/Runner.app
+
+      - name: Take screenshots
+        run: |
+          set -uo pipefail
+          UDID="${{ steps.sim.outputs.udid }}"
+          APP="com.coreinteractive.prayerLock"
+          mkdir -p screenshots
+
+          shoot () {
+            NAME="$1"
+            # The app reads the setting "shot" (shared_preferences key "flutter.shot")
+            xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
+            xcrun simctl spawn "$UDID" defaults write "$APP" "flutter.shot" -string "$NAME"
+            xcrun simctl launch "$UDID" "$APP"
+            sleep 9
+            xcrun simctl io "$UDID" screenshot "screenshots/$NAME.png"
+            echo "saved $NAME"
+          }
+
+          # numbered so they sort in a good order
+          shoot onboarding_0
+          shoot onboarding_1
+          shoot onboarding_3
+          shoot onboarding_6
+          shoot commit
+          shoot paywall
+          shoot home
+          shoot prayer
+          shoot streak
+          shoot insights
+          shoot profile
+          shoot plan
+          shoot admin
+
+          ls -la screenshots
+
+      - name: Save app log (helps when a picture looks wrong)
+        if: always()
+        run: |
+          xcrun simctl spawn "${{ steps.sim.outputs.udid }}" log show --last 5m --predicate 'process == "Runner"' --style compact > screenshots/app-log.txt 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-screenshots
+          path: screenshots/
+          if-no-files-found: warn

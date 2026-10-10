@@ -9,14 +9,16 @@ import '../widgets/fire.dart';
 import '../widgets/mood_face.dart';
 
 class Onboarding extends StatefulWidget {
-  const Onboarding({super.key});
+  /// Start on this page (used by screenshot mode).
+  final int startAt;
+  const Onboarding({super.key, this.startAt = 0});
   @override
   State<Onboarding> createState() => _OnboardingState();
 }
 
 class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   static const _count = 7;
-  int _i = 0;
+  late int _i = widget.startAt;
   String? _habit;
   final Set<String> _goals = {};
   TimeOfDay _morning = const TimeOfDay(hour: 7, minute: 0);

@@ -3,7 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'admin/admin_dashboard.dart';
+import 'config.dart';
 import 'firebase_options.dart';
+import 'screens/plan_screen.dart';
+import 'screens/streak_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/commit_screen.dart';
 import 'screens/prayer_flow.dart';
@@ -26,10 +31,50 @@ Future<void> main() async {
   await state.load();
   await NotificationService.init();
   BlockerService.preload(); // load the app list in the background
+  if (kShotMode) {
+    final p = await SharedPreferences.getInstance();
+    _shot = p.getString('shot') ?? 'home';
+  }
   runApp(ChangeNotifierProvider.value(value: state, child: const PrayerLockApp()));
 }
 
 final navigatorKey = GlobalKey<NavigatorState>();
+
+/// Screen to show in screenshot mode (see kShotMode).
+String _shot = 'home';
+
+Widget _shotScreen() {
+  switch (_shot) {
+    case 'onboarding_0':
+      return const Onboarding(startAt: 0);
+    case 'onboarding_1':
+      return const Onboarding(startAt: 1);
+    case 'onboarding_3':
+      return const Onboarding(startAt: 3);
+    case 'onboarding_6':
+      return const Onboarding(startAt: 6);
+    case 'commit':
+      return const CommitScreen();
+    case 'paywall':
+      return const Paywall();
+    case 'prayer':
+      return const PrayerFlow(kind: 'gate');
+    case 'insights':
+      return const Shell(initialIndex: 1);
+    case 'locked':
+      return const Shell(initialIndex: 2);
+    case 'profile':
+      return const Shell(initialIndex: 3);
+    case 'streak':
+      return const StreakScreen();
+    case 'plan':
+      return const PlanScreen();
+    case 'admin':
+      return const AdminDashboard();
+    default:
+      return const Shell();
+  }
+}
 
 class PrayerLockApp extends StatefulWidget {
   const PrayerLockApp({super.key});
@@ -92,6 +137,7 @@ class _GateState extends State<_Gate> {
 
   @override
   Widget build(BuildContext context) {
+    if (kShotMode) return _shotScreen();
     final onboarded = context.select<AppState, bool>((s) => s.onboarded);
     final entitled = context.select<AppState, bool>((s) => s.entitled);
     final committed = context.select<AppState, bool>((s) => s.committed);

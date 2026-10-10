@@ -13,4 +13,11 @@ const bool kMockBuild = bool.fromEnvironment('MOCK', defaultValue: true);
 
 /// Fills the app with 9 days of sample prayers (for store screenshots).
 /// Not saved to the phone. Run with:  --dart-define=DEMO=true
-const bool kDemoData = bool.fromEnvironment('DEMO', defaultValue: false);
+const bool kDemoData =
+    bool.fromEnvironment('DEMO', defaultValue: false) || kShotMode;
+
+/// Screenshot build (used by GitHub Actions on an iPhone simulator).
+/// The app opens straight on the screen named in the saved setting "shot",
+/// with sample data. Never turn this on in a release build.
+/// Build with:  --dart-define=SHOTMODE=true
+const bool kShotMode = bool.fromEnvironment('SHOTMODE', defaultValue: false);
