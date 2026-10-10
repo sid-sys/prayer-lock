@@ -1,8 +1,16 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+
+initializeApp();
 
 // The key lives in Firebase Secret Manager. It is never written in code.
 const OPENAI_API_KEY = defineSecret("OPENAI_API_KEY");
+
+// Each account may ask for this many prayers per day (UTC day).
+// This keeps the AI cost safe, even if someone tries to abuse the function.
+const DAILY_LIMIT = 30;
 
 const LEVELS = ["distant", "struggling", "okay", "close", "very close"];
 const FEELINGS = [
@@ -19,6 +27,24 @@ const STYLE = {
     "A short prayer to pause before using the phone: a moment with God, focus, and wise use of time.",
 };
 
+/** Count one prayer for this account today. Returns false if the limit is used up. */
+async function takeOne(uid) {
+  const db = getFirestore();
+  const day = new Date().toISOString().slice(0, 10);
+  const ref = db.collection("usage").doc(`${uid}_${day}`);
+  return db.runTransaction(async (t) => {
+    const snap = await t.get(ref);
+    const used = snap.exists ? snap.data().count || 0 : 0;
+    if (used >= DAILY_LIMIT) return false;
+    t.set(
+      ref,
+      { uid, day, count: used + 1, updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
+    return true;
+  });
+}
+
 exports.generatePrayer = onCall(
   { secrets: [OPENAI_API_KEY], region: "us-central1", maxInstances: 10 },
   async (request) => {
@@ -30,6 +56,15 @@ exports.generatePrayer = onCall(
     const kind = STYLE[request.data.kind] ? request.data.kind : "gate";
     if (!(rel >= 1 && rel <= 5) || (feeling && !FEELINGS.includes(feeling))) {
       throw new HttpsError("invalid-argument", "Bad input.");
+    }
+
+    // Daily limit per account.
+    const allowed = await takeOne(request.auth.uid);
+    if (!allowed) {
+      throw new HttpsError(
+        "resource-exhausted",
+        "You have reached today's prayer limit. Please try again tomorrow."
+      );
     }
 
     const feelText = feeling

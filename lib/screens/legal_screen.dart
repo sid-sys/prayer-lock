@@ -50,7 +50,7 @@ const _terms = <_Section>[
   _Section('Using Prayer Lock',
       'By using Prayer Lock you agree to these terms. You must be old enough to agree to them where you live. Use the app only for lawful, personal use.'),
   _Section('Free trial and subscription',
-      'New subscribers get a 7 day free trial. After the trial your plan renews automatically (monthly or yearly, as you chose) unless you cancel before the trial ends. Prices are shown before you start. Payment is taken by Google Play or the Apple App Store, and renewal and cancellation are managed in your store account settings as well as in Profile > Plan. Refunds follow the store\'s rules.'),
+      'New subscribers get a 7 day free trial. After the trial your plan renews automatically (monthly or yearly, as you chose) unless you cancel before the trial ends. Prices are shown before you start. Payment is taken by Google Play or the Apple App Store, and renewal and cancellation are managed in your store account settings as well as in Profile > Plan. Refunds follow the store\'s rules.\n\nLifetime plan: if offered, Lifetime is a one-time payment for access to Prayer Lock for as long as the app is available. It has no free trial and does not renew. If we ever stop running the app, we will tell you in advance.'),
   _Section('Not professional advice',
       'Prayers, verses and check-ins are for spiritual encouragement only. They are not medical, mental health or crisis advice. If you are in crisis, please contact local emergency services or a trusted professional.'),
   _Section('AI generated prayers',

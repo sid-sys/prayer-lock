@@ -18,12 +18,14 @@ String initials(String name) =>
 Color planColor(String plan) => switch (plan) {
       'yearly' => AppColors.yellow,
       'monthly' => AppColors.mint,
+      'lifetime' => const Color(0xFFC9A6FF),
       _ => const Color(0xFFE8D2BC),
     };
 
 String planLabel(String plan) => switch (plan) {
       'yearly' => 'Yearly',
       'monthly' => 'Monthly',
+      'lifetime' => 'Lifetime 💎',
       _ => 'Free',
     };
 

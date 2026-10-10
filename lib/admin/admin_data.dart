@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../services/purchase_service.dart';
 
 /// Everything the admin panel shows is built from a list of [AdminUser].
 /// Today the list is made up (MockAdminRepository). Later a real repository
@@ -56,7 +57,7 @@ class AdminUser {
   final bool committed;
   final int paywallViews;
   final int paymentAttempts;
-  final String plan; // 'none', 'monthly', 'yearly'
+  final String plan; // 'none', 'monthly', 'yearly', 'lifetime'
   final DateTime? subscribedAt;
   final List<AdminPayment> payments;
   final List<AdminEvent> events; // newest first
@@ -96,6 +97,7 @@ class AdminStats {
   final int totalUsers;
   final int subscribedUsers;
   final int payingUsers;
+  final int lifetimeUsers;
   final int newUsers7d;
   final int dauToday;
   final int wau;
@@ -115,6 +117,7 @@ class AdminStats {
     required this.totalUsers,
     required this.subscribedUsers,
     required this.payingUsers,
+    required this.lifetimeUsers,
     required this.newUsers7d,
     required this.dauToday,
     required this.wau,
@@ -162,6 +165,7 @@ class AdminStats {
       totalUsers: users.length,
       subscribedUsers: users.where((u) => u.subscribed).length,
       payingUsers: users.where((u) => u.payments.isNotEmpty).length,
+      lifetimeUsers: users.where((u) => u.plan == 'lifetime').length,
       newUsers7d: users.where((u) => u.joinedAt.isAfter(now!.subtract(const Duration(days: 7)))).length,
       dauToday: dau(today),
       wau: wau,
@@ -189,8 +193,9 @@ abstract class AdminRepository {
 
 /// Made-up users so the panel can be seen before a real backend exists.
 class MockAdminRepository implements AdminRepository {
-  static const yearly = 29.99;
-  static const monthly = 9.99;
+  static const yearly = PurchaseService.yearlyUsd;
+  static const monthly = PurchaseService.monthlyUsd;
+  static const lifetime = PurchaseService.lifetimeUsd;
 
   @override
   Future<List<AdminUser>> loadUsers() async {
@@ -232,7 +237,8 @@ class MockAdminRepository implements AdminRepository {
       final tried = views > 0 && r.nextDouble() < 0.5;
       final attempts = tried ? 1 + r.nextInt(3) : 0;
       final subscribed = tried && r.nextDouble() < 0.65;
-      final plan = !subscribed ? 'none' : (r.nextDouble() < 0.55 ? 'yearly' : 'monthly');
+      final roll = r.nextDouble();
+      final plan = !subscribed ? 'none' : (roll < 0.15 ? 'lifetime' : (roll < 0.6 ? 'yearly' : 'monthly'));
 
       final ev = <AdminEvent>[];
       var t = joined;
@@ -256,8 +262,11 @@ class MockAdminRepository implements AdminRepository {
       if (subscribed) {
         subAt = t.add(Duration(minutes: 2 + attempts * 3));
         if (subAt.isAfter(now)) subAt = now.subtract(const Duration(minutes: 5));
-        ev.add(AdminEvent(subAt, 'subscribed',
-            plan == 'yearly' ? 'Yearly plan, 7 day free trial' : 'Monthly plan, 7 day free trial'));
+        ev.add(AdminEvent(subAt, 'subscribed', switch (plan) {
+          'yearly' => 'Yearly plan, 7 day free trial',
+          'monthly' => 'Monthly plan, 7 day free trial',
+          _ => 'Lifetime plan, one payment, no trial',
+        }));
       }
 
       // Daily use. Subscribers use the app more. Some people stop coming.
@@ -309,7 +318,9 @@ class MockAdminRepository implements AdminRepository {
 
       // Payments: yearly pays once after the trial, monthly every 30 days.
       final pay = <AdminPayment>[];
-      if (subAt != null) {
+      if (subAt != null && plan == 'lifetime') {
+        pay.add(AdminPayment(subAt, lifetime));
+      } else if (subAt != null) {
         var next = subAt.add(const Duration(days: 7));
         while (!next.isAfter(now)) {
           pay.add(AdminPayment(next, plan == 'yearly' ? yearly : monthly));

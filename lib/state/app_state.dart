@@ -99,15 +99,20 @@ class AppState extends ChangeNotifier {
   // ---------- access / paywall ----------
 
   /// True when the user may use the app (trial running or subscribed).
+  /// Lifetime buyers pay once. No trial, no renewal, no cancelling.
+  bool get isLifetime => plan == 'lifetime' && trialStart != null;
+
   bool get entitled {
     if (trialStart == null) return false;
+    if (isLifetime) return true;
     if (cancelled && accessUntil != null && DateTime.now().isAfter(accessUntil!)) {
       return false;
     }
     return true;
   }
 
-  bool get inTrial => trialStart != null && DateTime.now().isBefore(trialEnds!);
+  bool get inTrial =>
+      !isLifetime && trialStart != null && DateTime.now().isBefore(trialEnds!);
 
   int get trialDaysLeft =>
       inTrial ? trialEnds!.difference(DateTime.now()).inDays + 1 : 0;
@@ -177,6 +182,7 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> cancelPlan() async {
+    if (isLifetime) return; // nothing to cancel
     cancelled = true;
     accessUntil = nextBilling; // keeps access until the paid period ends
     await _p.setBool('cancelled', true);

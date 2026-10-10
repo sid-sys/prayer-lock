@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Nothing is readable or writable from the app. Only our server code
+    // (Cloud Functions) can use the database.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

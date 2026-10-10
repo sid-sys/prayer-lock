@@ -5,6 +5,7 @@ import '../admin/admin_dashboard.dart';
 import '../config.dart';
 import '../services/auth_service.dart';
 import '../services/blocker_service.dart';
+import '../services/purchase_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'legal_screen.dart';
@@ -46,11 +47,13 @@ class SettingsScreen extends StatelessWidget {
           child: ListTile(
             leading: const Text('👑', style: TextStyle(fontSize: 26)),
             title: const Text('Your plan'),
-            subtitle: Text(s.cancelled
-                ? '${s.plan == 'yearly' ? 'Yearly' : 'Monthly'} · Cancelled'
-                : s.inTrial
-                    ? '${s.plan == 'yearly' ? 'Yearly' : 'Monthly'} · Free trial, ${s.trialDaysLeft} days left'
-                    : '${s.plan == 'yearly' ? 'Yearly' : 'Monthly'} · Active'),
+            subtitle: Text(s.isLifetime
+                ? 'Lifetime · never expires'
+                : s.cancelled
+                    ? '${PurchaseService.nameOf(s.plan)} · Cancelled'
+                    : s.inTrial
+                        ? '${PurchaseService.nameOf(s.plan)} · Free trial, ${s.trialDaysLeft} days left'
+                        : '${PurchaseService.nameOf(s.plan)} · Active'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.push(
                 context, MaterialPageRoute(builder: (_) => const PlanScreen())),

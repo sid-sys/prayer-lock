@@ -23,6 +23,8 @@ class _PaywallState extends State<Paywall> {
   static const _orange = Color(0xFFFF9500);
   static const _ink = Color(0xFF1C1B22);
 
+  bool get _lifetime => _plan == 'lifetime';
+
   @override
   void initState() {
     super.initState();
@@ -71,25 +73,50 @@ class _PaywallState extends State<Paywall> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
               children: [
-                Text('Start your 7-day FREE trial to continue 🙏',
-                    textAlign: TextAlign.center, style: h(27, color: Colors.black)),
+                Text(
+                    _lifetime
+                        ? 'Own Prayer Lock for life 🙏'
+                        : 'Start your 7-day FREE trial to continue 🙏',
+                    textAlign: TextAlign.center,
+                    style: h(27, color: Colors.black)),
                 const SizedBox(height: 18),
 
                 // Timeline (kept compact so it is always visible)
-                _step(Icons.lock_open, _orange, 'Today',
-                    'Unlock morning and night prayer, pray-before-you-scroll, streaks and more.'),
-                _step(Icons.notifications_active_outlined, _orange, 'In 5 Days - Reminder',
-                    "We'll remind you that your trial is ending soon, if you've allowed notifications."),
-                _step(Icons.workspace_premium, Colors.black, 'In 7 Days - Billing Starts',
-                    "You'll be charged on $billText unless you cancel anytime.",
-                    last: true),
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  child: _lifetime
+                      ? Column(
+                          key: const ValueKey('life'),
+                          children: [
+                            _step(Icons.all_inclusive, _orange, 'Today',
+                                'Pay once and unlock morning and night prayer, pray-before-you-scroll, streaks and everything new we add.'),
+                            _step(Icons.verified_outlined, Colors.black, 'Forever',
+                                'No free trial. No renewals. No surprise charges.',
+                                last: true),
+                          ],
+                        )
+                      : Column(
+                          key: const ValueKey('trial'),
+                          children: [
+                            _step(Icons.lock_open, _orange, 'Today',
+                                'Unlock morning and night prayer, pray-before-you-scroll, streaks and more.'),
+                            _step(Icons.notifications_active_outlined, _orange,
+                                'In 5 Days - Reminder',
+                                "We'll remind you that your trial is ending soon, if you've allowed notifications."),
+                            _step(Icons.workspace_premium, Colors.black,
+                                'In 7 Days - Billing Starts',
+                                "You'll be charged on $billText unless you cancel anytime.",
+                                last: true),
+                          ],
+                        ),
+                ),
                 const SizedBox(height: 16),
 
                 // Plans (compact)
                 _planCard(
                   id: 'yearly',
                   banner: '7 DAYS FREE',
-                  title: 'Yearly · save 75%',
+                  title: 'Yearly · save ${PurchaseService.savePercent}%',
                   price: '${PurchaseService.yearlyPerMonth}/mo',
                   sub: '${PurchaseService.yearlyPrice} billed annually',
                 ),
@@ -99,15 +126,22 @@ class _PaywallState extends State<Paywall> {
                   title: 'Monthly',
                   price: '${PurchaseService.monthlyPrice}/mo',
                 ),
+                const SizedBox(height: 10),
+                _planCard(
+                  id: 'lifetime',
+                  title: '💎 Lifetime',
+                  price: PurchaseService.lifetimePrice,
+                  sub: 'Pay once. Yours forever.',
+                ),
                 const SizedBox(height: 12),
 
-                const Row(
+                Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.check, size: 20, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('No Payment Due Now',
-                        style: TextStyle(
+                    const Icon(Icons.check, size: 20, color: Colors.black),
+                    const SizedBox(width: 8),
+                    Text(_lifetime ? 'One payment. No renewals.' : 'No Payment Due Now',
+                        style: const TextStyle(
                             fontSize: 17, fontWeight: FontWeight.w700, color: Colors.black)),
                   ],
                 ),
@@ -124,13 +158,18 @@ class _PaywallState extends State<Paywall> {
                           height: 22,
                           width: 22,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Start My 7-Day Free Trial'),
+                      : Text(_lifetime ? 'Get Lifetime Access' : 'Start My 7-Day Free Trial'),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _plan == 'yearly'
-                      ? '7 days free, then ${PurchaseService.yearlyPrice} per year. Auto-renews unless you cancel. Cancel in the app store.'
-                      : '7 days free, then ${PurchaseService.monthlyPrice} per month. Auto-renews unless you cancel. Cancel in the app store.',
+                  switch (_plan) {
+                    'yearly' =>
+                      '7 days free, then ${PurchaseService.yearlyPrice} per year. Auto-renews unless you cancel. Cancel in the app store.',
+                    'monthly' =>
+                      '7 days free, then ${PurchaseService.monthlyPrice} per month. Auto-renews unless you cancel. Cancel in the app store.',
+                    _ =>
+                      'One-time payment of ${PurchaseService.lifetimePrice}. No free trial, no renewals. Refunds follow the app store rules.',
+                  },
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 12, color: Colors.black54, height: 1.3),
                 ),
@@ -229,18 +268,18 @@ class _PaywallState extends State<Paywall> {
                         color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
               ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
               child: Row(
                 children: [
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 30,
+                    height: 30,
                     decoration: BoxDecoration(
                       color: on ? Colors.black : Colors.transparent,
                       shape: BoxShape.circle,
                       border: Border.all(color: on ? Colors.black : Colors.black26, width: 2.5),
                     ),
-                    child: on ? const Icon(Icons.check, color: Colors.white, size: 19) : null,
+                    child: on ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
                   ),
                   const SizedBox(width: 12),
                   Expanded(

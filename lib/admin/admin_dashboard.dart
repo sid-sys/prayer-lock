@@ -88,7 +88,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               _Metric('Total users', '${st.totalUsers}', '+${st.newUsers7d} this week', '👥', AppColors.blue),
               _Metric('Subscribed', '${st.subscribedUsers}',
-                  '${(st.conversion * 100).toStringAsFixed(0)}% of users · ${st.payingUsers} paying', '👑', AppColors.mint),
+                  '${(st.conversion * 100).toStringAsFixed(0)}% of users · ${st.payingUsers} paying · ${st.lifetimeUsers} lifetime', '👑', AppColors.mint),
               _Metric('Active today', '${st.dauToday}', '${st.wau} active this week', '🔥', AppColors.yellow),
               _Metric('Revenue', _money0.format(st.revenueTotal),
                   '${_money0.format(st.revenue30d)} last 30 days', '💰', AppColors.pink),
