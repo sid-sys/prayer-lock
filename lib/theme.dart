@@ -130,3 +130,47 @@ class SegBar extends StatelessWidget {
         ],
       );
 }
+
+/// Switch with a slow, smooth flip (the normal Material one is too quick).
+class SmoothSwitch extends StatelessWidget {
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  const SmoothSwitch({super.key, required this.value, this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    const d = Duration(milliseconds: 520);
+    const c = Curves.easeInOutCubic;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onChanged == null ? null : () => onChanged!(!value),
+      child: AnimatedContainer(
+        duration: d,
+        curve: c,
+        width: 56,
+        height: 32,
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: value ? AppColors.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.ink, width: 2.5),
+        ),
+        child: AnimatedAlign(
+          duration: d,
+          curve: c,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: AnimatedContainer(
+            duration: d,
+            curve: c,
+            width: value ? 20 : 16,
+            height: value ? 20 : 16,
+            decoration: BoxDecoration(
+              color: value ? Colors.white : AppColors.ink,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

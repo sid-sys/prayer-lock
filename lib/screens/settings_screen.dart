@@ -32,11 +32,11 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         Card(
           child: Column(children: [
-            SwitchListTile(
-              value: s.remindersOn,
-              onChanged: s.setRemindersOn,
+            ListTile(
               title: const Text('Prayer reminders 🔔'),
               subtitle: const Text('A gentle message morning and night'),
+              trailing: SmoothSwitch(value: s.remindersOn, onChanged: s.setRemindersOn),
+              onTap: () => s.setRemindersOn(!s.remindersOn),
             ),
             ListTile(
               leading: const Pic('sun', size: 34),
@@ -54,11 +54,11 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Card(
-          child: SwitchListTile(
-            value: s.blockingOn,
-            onChanged: s.setBlockingOn,
+          child: ListTile(
             title: const Text('Blocking on'),
             subtitle: const Text('Turn off to use all apps freely'),
+            trailing: SmoothSwitch(value: s.blockingOn, onChanged: s.setBlockingOn),
+            onTap: () => s.setBlockingOn(!s.blockingOn),
           ),
         ),
         const SizedBox(height: 12),

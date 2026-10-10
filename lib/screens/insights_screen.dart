@@ -108,6 +108,7 @@ class InsightsScreen extends StatelessWidget {
           Card(
             margin: const EdgeInsets.only(bottom: 8),
             child: ListTile(
+              onTap: () => _showPrayer(context, e),
               leading: Text(
                   e.kind == 'morning' ? '🌅' : e.kind == 'night' ? '🌙' : '🔒',
                   style: const TextStyle(fontSize: 26)),
@@ -123,6 +124,68 @@ class InsightsScreen extends StatelessWidget {
       ],
     );
   }
+
+  /// Open one saved prayer in a sheet.
+  void _showPrayer(BuildContext context, PrayerEntry e) {
+    final kindName = e.kind == 'morning'
+        ? 'Morning prayer 🌅'
+        : e.kind == 'night'
+            ? 'Night prayer 🌙'
+            : 'Prayer before an app 🔒';
+    final mood = moodWord((e.relationship - 1) / 4);
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32))),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.65,
+        minChildSize: 0.4,
+        maxChildSize: 0.92,
+        builder: (context, scroll) => ListView(
+          controller: scroll,
+          padding: const EdgeInsets.fromLTRB(24, 14, 24, 32),
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                    color: AppColors.soft.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(3)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Text(kindName, style: h(24)),
+            const SizedBox(height: 4),
+            Text(DateFormat('EEEE, MMM d · h:mm a').format(e.date),
+                style: h(14, color: AppColors.soft, w: FontWeight.w500)),
+            const SizedBox(height: 14),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              _chip('💛 $mood with God', AppColors.yellow),
+              _chip(
+                  e.feeling == 'Private' ? '🤍 Kept private' : '✨ Felt ${e.feeling.toLowerCase()}',
+                  AppColors.mint),
+            ]),
+            const SizedBox(height: 22),
+            if (e.prayer != null && e.prayer!.isNotEmpty)
+              Text(e.prayer!, style: serif(22))
+            else
+              Text('The words of this prayer were not saved. New prayers are saved here.',
+                  style: h(15, color: AppColors.soft, w: FontWeight.w500)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _chip(String t, Color c) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(18)),
+        child: Text(t, style: h(14)),
+      );
 
   Widget _bar(DateTime d, double? mood, bool isToday) {
     const maxH = 135.0;

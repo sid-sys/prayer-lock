@@ -10,24 +10,29 @@ class PrayerEntry {
   final int relationship; // 1-5
   final String feeling;
   final String kind;
-  PrayerEntry(this.date, this.relationship, this.feeling, {this.kind = 'gate'});
+  final String? prayer;
+  PrayerEntry(this.date, this.relationship, this.feeling,
+      {this.kind = 'gate', this.prayer});
 
   Map<String, dynamic> toJson() => {
         'd': date.toIso8601String(),
         'r': relationship,
         'f': feeling,
         'k': kind,
+        if (prayer != null) 'p': prayer,
       };
   factory PrayerEntry.fromJson(Map<String, dynamic> j) =>
-      PrayerEntry(DateTime.parse(j['d']), j['r'], j['f'], kind: j['k'] ?? 'gate');
+      PrayerEntry(DateTime.parse(j['d']), j['r'], j['f'],
+          kind: j['k'] ?? 'gate', prayer: j['p'] as String?);
 }
 
-class Badge {
+class PrayerBadge {
   final String title;
-  final String how;
+  final String how; // how to earn it
+  final String quip; // playful line shown once earned
   final String image;
   final bool unlocked;
-  const Badge(this.title, this.how, this.image, this.unlocked);
+  const PrayerBadge(this.title, this.how, this.quip, this.image, this.unlocked);
 }
 
 class AppState extends ChangeNotifier {
@@ -198,11 +203,93 @@ class AppState extends ChangeNotifier {
 
   int get totalPrayers => history.length;
 
-  List<Badge> get badges => [
-        Badge('First Prayer', 'Complete your first prayer.', 'badge_first', totalPrayers >= 1),
-        Badge('Faithful Three', 'Pray 3 days in a row.', 'badge_three', bestStreak >= 3),
-        Badge('A Week With God', 'Reach a 7 day streak.', 'badge_week', bestStreak >= 7),
-        Badge('Rooted in Faith', 'Reach a 30 day streak.', 'badge_month', bestStreak >= 30),
+  // ---------- badge stats ----------
+
+  int _count(String kind) => history.where((e) => e.kind == kind).length;
+
+  Map<DateTime, Set<String>> get _kindsByDay {
+    final m = <DateTime, Set<String>>{};
+    for (final e in history) {
+      final d = DateTime(e.date.year, e.date.month, e.date.day);
+      (m[d] ??= {}).add(e.kind);
+    }
+    return m;
+  }
+
+  bool get _hadFullDay => _kindsByDay.values
+      .any((k) => k.contains('morning') && k.contains('night'));
+
+  /// Longest run of days with both a morning and a night prayer.
+  int get _bestFullDayRun {
+    final days = _kindsByDay.entries
+        .where((e) => e.value.contains('morning') && e.value.contains('night'))
+        .map((e) => e.key)
+        .toList()
+      ..sort();
+    var best = 0, run = 0;
+    DateTime? prev;
+    for (final d in days) {
+      run = (prev != null && d.difference(prev).inDays == 1) ? run + 1 : 1;
+      if (run > best) best = run;
+      prev = d;
+    }
+    return best;
+  }
+
+  /// True if the user came back after 3 or more days away.
+  bool get _cameBack {
+    final days = _days.toList()..sort();
+    for (var i = 1; i < days.length; i++) {
+      if (days[i].difference(days[i - 1]).inDays >= 4) return true;
+    }
+    return false;
+  }
+
+  int get _sharedFeelings => history.where((e) => e.feeling != 'Private').length;
+  int get _gratefulCount => history.where((e) => e.feeling == 'Grateful').length;
+  bool get _feltVeryClose => history.any((e) => e.relationship == 5);
+
+  List<PrayerBadge> get badges => [
+        PrayerBadge('First Prayer', 'Say your first prayer',
+            'Every journey starts with one tiny candle.', 'badge_first', totalPrayers >= 1),
+        PrayerBadge('Faithful Three', 'Pray 3 days in a row',
+            'Three days! Look at you go.', 'badge_three', bestStreak >= 3),
+        PrayerBadge('A Week With God', 'Reach a 7 day streak',
+            'Seven days of showing up. Heaven noticed.', 'badge_week', bestStreak >= 7),
+        PrayerBadge('Rooted in Faith', 'Reach a 30 day streak',
+            "30 days. You're basically a tree now.", 'badge_month', bestStreak >= 30),
+        PrayerBadge('Sunrise Soul', 'Pray 5 mornings',
+            'Up before the scroll. Respect.', 'b_sunrise', _count('morning') >= 5),
+        PrayerBadge('Good Night, Jesus', 'Pray 5 nights',
+            'Tucked in by grace.', 'b_night', _count('night') >= 5),
+        PrayerBadge('Full Day', 'Pray morning and night on one day',
+            "Both ends of the day. Chef's kiss.", 'b_fullday', _hadFullDay),
+        PrayerBadge('Bookend Week', 'Pray morning and night 7 days in a row',
+            'Seven days, two prayers each. Show-off.', 'b_bookend', _bestFullDayRun >= 7),
+        PrayerBadge('Scroll Stopper', 'Pray before opening a locked app 10 times',
+            'You paused the scroll. Legend.', 'b_stop', _count('gate') >= 10),
+        PrayerBadge('Phone Tamer', 'Lock 5 apps',
+            'Five apps on a leash. Good phone.', 'b_tamer', lockedApps.length >= 5),
+        PrayerBadge('Fort Knox', 'Lock 20 apps',
+            'Nobody scrolls past you.', 'b_vault', lockedApps.length >= 20),
+        PrayerBadge('Honest Heart', 'Share how you feel 5 times',
+            'Feelings are welcome here.', 'b_honest', _sharedFeelings >= 5),
+        PrayerBadge('Closer Than Close', 'Say you feel Very close to God',
+            'Closeness level: cuddling.', 'b_closer', _feltVeryClose),
+        PrayerBadge('Grateful Heart', 'Pick Grateful 3 times',
+            'Thank-you machine, activated.', 'b_grateful', _gratefulCount >= 3),
+        PrayerBadge('Comeback Kid', 'Pray again after 3 days away',
+            'Welcome back. The door was never locked.', 'b_comeback', _cameBack),
+        PrayerBadge('Double Digits', 'Say 10 prayers',
+            'Ten prayers! Heavenly.', 'b_ten', totalPrayers >= 10),
+        PrayerBadge('Two Weeks Strong', 'Reach a 14 day streak',
+            'Fourteen days. Definitely not a fluke.', 'b_twoweeks', bestStreak >= 14),
+        PrayerBadge('Half Century', 'Say 50 prayers',
+            'Fifty prayers. Halo shining.', 'b_fifty', totalPrayers >= 50),
+        PrayerBadge('Hundred Club', 'Say 100 prayers',
+            'Triple digits. Angels ask for tips.', 'b_hundred', totalPrayers >= 100),
+        PrayerBadge('Century Streak', 'Reach a 100 day streak',
+            '100 days straight. Please write a book.', 'b_century', bestStreak >= 100),
       ];
 
   /// Next milestone: (target days, days left).

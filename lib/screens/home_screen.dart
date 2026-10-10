@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../data/verses.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/streak_cards.dart';
 import 'prayer_flow.dart';
 import 'streak_screen.dart';
 
@@ -17,6 +18,9 @@ class HomeScreen extends StatelessWidget {
 
   String _time(BuildContext c, int mins) =>
       TimeOfDay(hour: mins ~/ 60, minute: mins % 60).format(c);
+
+  void _openStreak(BuildContext c) => Navigator.push(
+      c, MaterialPageRoute(builder: (_) => const StreakScreen()));
 
   void _pray(BuildContext c, String kind) => Navigator.push(
       c, MaterialPageRoute(builder: (_) => PrayerFlow(kind: kind)));
@@ -120,6 +124,12 @@ class HomeScreen extends StatelessWidget {
             const ArrowDot(),
           ]),
         ),
+        const SizedBox(height: 14),
+
+        // Week and next milestone (tap to open the streak page)
+        StreakWeekCard(s, onTap: () => _openStreak(context)),
+        const SizedBox(height: 14),
+        MilestoneCard(s, onTap: () => _openStreak(context)),
         const SizedBox(height: 14),
 
         // Verse

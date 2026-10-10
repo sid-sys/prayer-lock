@@ -22,7 +22,12 @@ class PrayerFlow extends StatefulWidget {
   State<PrayerFlow> createState() => _PrayerFlowState();
 }
 
-class _PrayerFlowState extends State<PrayerFlow> {
+class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateMixin {
+  /// You must stay with the prayer for 10 seconds before the apps unlock.
+  static const _prayerSeconds = 10;
+  late final AnimationController _ring = AnimationController(
+      vsync: this, duration: const Duration(seconds: _prayerSeconds));
+
   _Step _step = _Step.mood;
   double _mood = 0.6;
   String _feeling = '';
@@ -43,14 +48,23 @@ class _PrayerFlowState extends State<PrayerFlow> {
       _prayer = null;
     });
     final p = await PrayerService.generate(_rel, _feeling, widget.kind);
-    if (mounted) setState(() => _prayer = p);
+    if (!mounted) return;
+    setState(() => _prayer = p);
+    _ring.forward(from: 0); // the 10 second count starts when the words appear
+  }
+
+  @override
+  void dispose() {
+    _ring.dispose();
+    super.dispose();
   }
 
   Future<void> _finish() async {
     final s = context.read<AppState>();
     await s.setSchedule(_minutes);
     await s.completePrayer(
-        PrayerEntry(DateTime.now(), _rel, _feeling.isEmpty ? 'Private' : _feeling, kind: widget.kind),
+        PrayerEntry(DateTime.now(), _rel, _feeling.isEmpty ? 'Private' : _feeling,
+            kind: widget.kind, prayer: _prayer),
         _minutes);
     NotificationService.celebrate(s.streak);
     if (mounted) setState(() => _step = _Step.done);
@@ -221,11 +235,59 @@ class _PrayerFlowState extends State<PrayerFlow> {
                   ),
                 ),
         ),
-        FilledButton(
-          onPressed: _prayer == null
-              ? null
-              : () => setState(() => _step = _Step.schedule),
-          child: Text(_doneButton),
+        // 10 second countdown: 10 -> 0. The button opens when it reaches 0.
+        AnimatedBuilder(
+          animation: _ring,
+          builder: (context, _) {
+            final started = _prayer != null;
+            final done = started && _ring.isCompleted;
+            final left = started ? (_prayerSeconds * (1 - _ring.value)).ceil() : _prayerSeconds;
+            return Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 76,
+                  height: 76,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      SizedBox(
+                        width: 76,
+                        height: 76,
+                        child: CircularProgressIndicator(
+                          value: started ? _ring.value : 0,
+                          strokeWidth: 7,
+                          strokeCap: StrokeCap.round,
+                          backgroundColor: Colors.white.withValues(alpha: 0.6),
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 250),
+                        transitionBuilder: (c, a) => ScaleTransition(scale: a, child: c),
+                        child: done
+                            ? const Icon(Icons.check_rounded,
+                                key: ValueKey('ok'), size: 40, color: AppColors.ink)
+                            : Text('$left', key: ValueKey(left), style: h(30)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  done
+                      ? 'Take your time. Continue when you are ready 💛'
+                      : 'Read it slowly and let it sink in…',
+                  style: h(14, color: AppColors.soft, w: FontWeight.w500),
+                ),
+                const SizedBox(height: 14),
+                FilledButton(
+                  onPressed: done ? () => setState(() => _step = _Step.schedule) : null,
+                  child: Text(done ? _doneButton : 'Keep praying… $left'),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );

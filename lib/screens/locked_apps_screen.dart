@@ -105,7 +105,13 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
           begin: Offset(0, leaving ? (locked ? 0.8 : -0.8) : (locked ? -0.8 : 0.8)),
           end: Offset.zero,
         ).animate(curved),
-        child: FadeTransition(opacity: curved, child: _tile(a, locked)),
+        child: ScaleTransition(
+          scale: leaving
+              ? Tween<double>(begin: 0.88, end: 1).animate(curved)
+              : Tween<double>(begin: 0.8, end: 1).animate(
+                  CurvedAnimation(parent: anim, curve: Curves.easeOutBack)),
+          child: FadeTransition(opacity: curved, child: _tile(a, locked)),
+        ),
       ),
     );
   }
@@ -115,12 +121,25 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
     final shown = _flipping.contains(a.packageName) ? !locked : locked;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      child: AnimatedContainer(
+      child: AnimatedScale(
+        scale: _flipping.contains(a.packageName) ? 1.07 : 1.0,
+        duration: const Duration(milliseconds: 420),
+        curve: Curves.easeInOutCubic,
+        child: AnimatedContainer(
         duration: const Duration(milliseconds: 520),
         curve: Curves.easeInOutCubic,
         decoration: BoxDecoration(
           color: shown ? AppColors.mint : AppColors.card,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: _flipping.contains(a.packageName)
+              ? [
+                  BoxShadow(
+                    color: (shown ? AppColors.mint : AppColors.soft).withValues(alpha: 0.55),
+                    blurRadius: 22,
+                    spreadRadius: 2,
+                  )
+                ]
+              : const [],
         ),
         child: Material(
           color: Colors.transparent,
@@ -138,12 +157,13 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
                   Expanded(
                       child: Text(a.name,
                           style: h(16), maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  _SmoothSwitch(value: shown),
+                  SmoothSwitch(value: shown),
                 ],
               ),
             ),
           ),
         ),
+      ),
       ),
     );
   }
@@ -155,7 +175,9 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
             Text('$emoji  $text', style: h(18)),
             const SizedBox(width: 8),
             AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 380),
+              transitionBuilder: (c, a) => ScaleTransition(
+                  scale: CurvedAnimation(parent: a, curve: Curves.easeOutBack), child: c),
               child: Container(
                 key: ValueKey(n),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
@@ -339,41 +361,3 @@ class _SkeletonState extends State<_Skeleton> with SingleTickerProviderStateMixi
   }
 }
 
-/// Switch with a slow, smooth flip (the normal one is too quick).
-class _SmoothSwitch extends StatelessWidget {
-  final bool value;
-  const _SmoothSwitch({required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    const d = Duration(milliseconds: 520);
-    const c = Curves.easeInOutCubic;
-    return AnimatedContainer(
-      duration: d,
-      curve: c,
-      width: 56,
-      height: 32,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: value ? AppColors.ink : Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.ink, width: 2.5),
-      ),
-      child: AnimatedAlign(
-        duration: d,
-        curve: c,
-        alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-        child: AnimatedContainer(
-          duration: d,
-          curve: c,
-          width: value ? 20 : 16,
-          height: value ? 20 : 16,
-          decoration: BoxDecoration(
-            color: value ? Colors.white : AppColors.ink,
-            shape: BoxShape.circle,
-          ),
-        ),
-      ),
-    );
-  }
-}
