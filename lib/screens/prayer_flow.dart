@@ -1,40 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/verses.dart';
+import '../services/notification_service.dart';
 import '../services/prayer_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/fire.dart';
+import '../widgets/mood_face.dart';
 
-enum _Step { relationship, feeling, prayer, schedule, done }
+enum _Step { mood, feeling, prayer, schedule, done }
 
+/// kind: 'morning', 'night' or 'gate'.
 class PrayerFlow extends StatefulWidget {
-  const PrayerFlow({super.key});
+  final String kind;
+  const PrayerFlow({super.key, this.kind = 'gate'});
   @override
   State<PrayerFlow> createState() => _PrayerFlowState();
 }
 
 class _PrayerFlowState extends State<PrayerFlow> {
-  _Step _step = _Step.relationship;
-  int _rel = 3;
-  String? _feeling;
+  _Step _step = _Step.mood;
+  double _mood = 0.6;
+  String _feeling = '';
   String? _prayer;
   int _minutes = 0;
 
-  Future<void> _loadPrayer() async {
-    setState(() {
-      _step = _Step.prayer;
-      _prayer = null;
-    });
-    final p = await PrayerService.generate(_rel, _feeling!);
-    if (mounted) setState(() => _prayer = p);
-  }
-
-  Future<void> _finish() async {
-    final s = context.read<AppState>();
-    _minutes = s.scheduleMinutes;
-    await s.completePrayer(PrayerEntry(DateTime.now(), _rel, _feeling!), _minutes);
-    if (mounted) setState(() => _step = _Step.done);
-  }
+  int get _rel => (_mood * 4).round() + 1; // 1..5
 
   @override
   void initState() {
@@ -42,162 +33,252 @@ class _PrayerFlowState extends State<PrayerFlow> {
     _minutes = context.read<AppState>().scheduleMinutes;
   }
 
+  Future<void> _loadPrayer() async {
+    setState(() {
+      _step = _Step.prayer;
+      _prayer = null;
+    });
+    final p = await PrayerService.generate(_rel, _feeling, widget.kind);
+    if (mounted) setState(() => _prayer = p);
+  }
+
+  Future<void> _finish() async {
+    final s = context.read<AppState>();
+    await s.setSchedule(_minutes);
+    await s.completePrayer(
+        PrayerEntry(DateTime.now(), _rel, _feeling.isEmpty ? 'Private' : _feeling, kind: widget.kind),
+        _minutes);
+    NotificationService.celebrate(s.streak);
+    if (mounted) setState(() => _step = _Step.done);
+  }
+
+  // ---- texts by kind ----
+  String get _feelingTitle => switch (widget.kind) {
+        'morning' => 'What do you want to bring to God today?',
+        'night' => 'What is on your heart tonight?',
+        _ => 'How are you feeling today?',
+      };
+
+  String get _doneButton => switch (widget.kind) {
+        'morning' => "I've prayed. Walk with me today 🌅",
+        'night' => 'I leave today in Your hands 🌙',
+        _ => "I've prayed today 🙏",
+      };
+
+  String get _moodTitle => widget.kind == 'night'
+      ? 'How close did you feel to Jesus today?'
+      : 'How is your relationship with God today?';
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: _step == _Step.done
-            ? const SizedBox()
-            : IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context)),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 250),
-            child: KeyedSubtree(key: ValueKey(_step), child: _body()),
+    final light = _step == _Step.mood;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      color: light ? moodColor(_mood) : AppColors.bg,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          leading: _step == _Step.done
+              ? const SizedBox()
+              : IconButton(
+                  icon: Icon(Icons.close, color: light ? AppColors.ink : Colors.white),
+                  onPressed: () => Navigator.pop(context)),
+        ),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: KeyedSubtree(key: ValueKey(_step), child: _body()),
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _body() {
-    switch (_step) {
-      case _Step.relationship:
-        return _relationship();
-      case _Step.feeling:
-        return _feelingStep();
-      case _Step.prayer:
-        return _prayerStep();
-      case _Step.schedule:
-        return _scheduleStep();
-      case _Step.done:
-        return _doneStep();
-    }
-  }
+  Widget _body() => switch (_step) {
+        _Step.mood => _moodStep(),
+        _Step.feeling => _feelingStep(),
+        _Step.prayer => _prayerStep(),
+        _Step.schedule => _scheduleStep(),
+        _Step.done => _doneStep(),
+      };
 
-  Widget _relationship() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+  // 1. face slider
+  Widget _moodStep() => Column(
         children: [
-          Text('How is your relationship with God today?', style: serif(26)),
-          const SizedBox(height: 28),
-          for (var i = 1; i <= 5; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: ChoiceChip(
-                label: SizedBox(
-                    width: double.infinity,
-                    child: Text(PrayerService.relationshipLabels[i - 1],
-                        style: const TextStyle(fontSize: 17))),
-                selected: _rel == i,
-                onSelected: (_) => setState(() => _rel = i),
-                padding: const EdgeInsets.all(14),
-              ),
-            ),
+          Text(_moodTitle,
+              textAlign: TextAlign.center, style: h(27, color: AppColors.ink)),
           const Spacer(),
+          MoodFace(t: _mood, size: MediaQuery.of(context).size.width - 48),
+          const Spacer(),
+          Text('I feel', style: h(15, color: AppColors.ink, w: FontWeight.w500)),
+          Text(moodWord(_mood), style: h(26, color: AppColors.ink)),
+          const SizedBox(height: 8),
+          MoodSlider(value: _mood, onChanged: (v) => setState(() => _mood = v)),
+          const SizedBox(height: 20),
           FilledButton(
-              onPressed: () => setState(() => _step = _Step.feeling),
-              child: const Text('Next')),
+            style: FilledButton.styleFrom(
+                backgroundColor: AppColors.ink, foregroundColor: Colors.white),
+            onPressed: () => setState(() => _step = _Step.feeling),
+            child: const Text('Next'),
+          ),
         ],
       );
 
-  Widget _feelingStep() => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('How are you feeling today?', style: serif(26)),
-          const SizedBox(height: 28),
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
+  // 2. feeling cards
+  Widget _feelingStep() {
+    const colors = [AppColors.blue, AppColors.peach, AppColors.mint, AppColors.pink];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_feelingTitle, style: h(28)),
+        const SizedBox(height: 18),
+        Expanded(
+          child: ListView(
             children: [
-              for (final f in PrayerService.feelings)
-                ChoiceChip(
-                  label: Text(f, style: const TextStyle(fontSize: 16)),
-                  selected: _feeling == f,
-                  onSelected: (_) => setState(() => _feeling = f),
-                  padding: const EdgeInsets.all(12),
+              for (var i = 0; i < PrayerService.feelings.length; i++)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: PastelCard(
+                    color: colors[i % colors.length],
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                    onTap: () {
+                      _feeling = PrayerService.feelings[i].$2;
+                      _loadPrayer();
+                    },
+                    child: Row(children: [
+                      Text(PrayerService.feelings[i].$1,
+                          style: const TextStyle(fontSize: 28)),
+                      const SizedBox(width: 14),
+                      Expanded(
+                          child: Text(PrayerService.feelings[i].$2,
+                              style: h(20, color: AppColors.ink))),
+                      const ArrowDot(),
+                    ]),
+                  ),
                 ),
             ],
           ),
-          const Spacer(),
-          FilledButton(
-              onPressed: _feeling == null ? null : _loadPrayer,
-              child: const Text('Get my prayer')),
-        ],
-      );
-
-  Widget _prayerStep() => Column(
-        children: [
-          Text('Read this prayer out loud', style: serif(20, color: AppColors.soft)),
-          const SizedBox(height: 24),
-          Expanded(
-            child: _prayer == null
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    child: Text(_prayer!,
-                        textAlign: TextAlign.center, style: serif(24)),
-                  ),
+        ),
+        Center(
+          child: TextButton(
+            onPressed: () {
+              _feeling = '';
+              _loadPrayer();
+            },
+            child: const Text('Keep it private. Skip',
+                style: TextStyle(color: AppColors.soft, fontSize: 16)),
           ),
-          FilledButton(
-              onPressed: _prayer == null ? null : () => setState(() => _step = _Step.schedule),
-              child: const Text("I've prayed today")),
-        ],
-      );
+        ),
+      ],
+    );
+  }
 
+  // 3. prayer
+  Widget _prayerStep() {
+    final v = verseOfDay();
+    return Column(
+      children: [
+        Text(
+            widget.kind == 'morning'
+                ? '🌅 Good morning. Before the world asks anything of you...'
+                : widget.kind == 'night'
+                    ? '🌙 The day is over. You can lay your worries down.'
+                    : '🙏 Read this prayer out loud',
+            textAlign: TextAlign.center,
+            style: h(17, color: AppColors.soft, w: FontWeight.w600)),
+        const SizedBox(height: 20),
+        Expanded(
+          child: _prayer == null
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      if (widget.kind == 'morning') ...[
+                        Text('"${v.text}"',
+                            textAlign: TextAlign.center,
+                            style: serif(16, color: AppColors.yellow)),
+                        Text(v.ref, style: const TextStyle(color: AppColors.soft)),
+                        const SizedBox(height: 22),
+                      ],
+                      Text(_prayer!, textAlign: TextAlign.center, style: serif(23)),
+                    ],
+                  ),
+                ),
+        ),
+        FilledButton(
+          onPressed: _prayer == null
+              ? null
+              : () => setState(() => _step = _Step.schedule),
+          child: Text(_doneButton),
+        ),
+      ],
+    );
+  }
+
+  // 4. schedule
   Widget _scheduleStep() {
-    final s = context.read<AppState>();
     return StatefulBuilder(builder: (context, set) {
+      const opts = [
+        (0, 'Automatic ✨'),
+        (30, '30 minutes'),
+        (50, '50 minutes'),
+        (60, '1 hour'),
+        (120, '2 hours'),
+      ];
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('When should your apps lock again?', style: serif(26)),
-          const SizedBox(height: 24),
-          for (final o in const [
-            [0, 'Automatic'],
-            [30, '30 minutes'],
-            [50, '50 minutes'],
-            [60, '1 hour'],
-            [120, '2 hours'],
-          ])
-            RadioListTile<int>(
-              value: o[0] as int,
-              groupValue: _minutes,
-              onChanged: (v) => set(() => _minutes = v!),
-              title: Text(o[1] as String),
+          Text('When should your apps lock again? 🔒', style: h(28)),
+          const SizedBox(height: 18),
+          for (final o in opts)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: PastelCard(
+                color: _minutes == o.$1 ? AppColors.mint : AppColors.card,
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                onTap: () => set(() => _minutes = o.$1),
+                child: Row(children: [
+                  Expanded(
+                      child: Text(o.$2,
+                          style: h(18,
+                              color: _minutes == o.$1 ? AppColors.ink : Colors.white))),
+                  if (_minutes == o.$1) const Icon(Icons.check_circle, color: AppColors.ink),
+                ]),
+              ),
             ),
           const Spacer(),
-          FilledButton(
-            onPressed: () async {
-              await s.setSchedule(_minutes);
-              await _finish();
-            },
-            child: const Text('Unlock my apps'),
-          ),
+          FilledButton(onPressed: _finish, child: const Text('Unlock my apps 🔓')),
         ],
       );
     });
   }
 
+  // 5. done
   Widget _doneStep() {
     final s = context.watch<AppState>();
     final v = verseOfDay();
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Icon(Icons.local_fire_department, size: 80, color: AppColors.gold),
-        Text('${s.streak}', style: serif(64)),
-        Text(s.streak == 1 ? 'day streak' : 'day streak',
-            style: const TextStyle(color: AppColors.soft, fontSize: 18)),
-        const SizedBox(height: 32),
-        Text('"${v.text}"', textAlign: TextAlign.center, style: serif(22)),
+        const AnimatedFire(size: 110),
+        Text('${s.streak}', style: h(72)),
+        Text(s.streak == 1 ? 'day in a row' : 'days in a row',
+            style: h(18, color: AppColors.soft, w: FontWeight.w500)),
+        const SizedBox(height: 28),
+        Text('"${v.text}"', textAlign: TextAlign.center, style: serif(21)),
         const SizedBox(height: 8),
-        Text(v.ref, style: const TextStyle(color: AppColors.gold)),
-        const SizedBox(height: 40),
+        Text(v.ref, style: const TextStyle(color: AppColors.yellow)),
+        if (widget.kind == 'night') ...[
+          const SizedBox(height: 18),
+          Text('Rest peacefully. You are not alone 💛',
+              style: h(16, color: AppColors.soft, w: FontWeight.w500)),
+        ],
+        const SizedBox(height: 36),
         FilledButton(
-            onPressed: () => Navigator.pop(context), child: const Text('Amen')),
+            onPressed: () => Navigator.pop(context), child: const Text('Amen 🙌')),
       ],
     );
   }

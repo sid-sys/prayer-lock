@@ -40,8 +40,7 @@ class _AuthScreenState extends State<AuthScreen> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Column(
                 children: [
-                  const Icon(Icons.self_improvement,
-                      size: 72, color: AppColors.gold),
+                  const Pic('logo', size: 96),
                   const SizedBox(height: 12),
                   Text('Prayer Lock', style: serif(32)),
                   const SizedBox(height: 6),

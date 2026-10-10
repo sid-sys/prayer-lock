@@ -10,6 +10,15 @@ const FEELINGS = [
   "Sad", "Stressed", "Peaceful", "Lost",
 ];
 
+const STYLE = {
+  morning:
+    "A morning prayer to Jesus: gratitude for the new day, surrender, and guidance for today.",
+  night:
+    "A night prayer to Jesus: thanks for the day, forgiveness, releasing worries, and peaceful rest.",
+  gate:
+    "A short prayer to pause before using the phone: a moment with God, focus, and wise use of time.",
+};
+
 exports.generatePrayer = onCall(
   { secrets: [OPENAI_API_KEY], region: "us-central1", maxInstances: 10 },
   async (request) => {
@@ -18,9 +27,14 @@ exports.generatePrayer = onCall(
     }
     const rel = Number(request.data.relationship);
     const feeling = String(request.data.feeling || "");
-    if (!(rel >= 1 && rel <= 5) || !FEELINGS.includes(feeling)) {
+    const kind = STYLE[request.data.kind] ? request.data.kind : "gate";
+    if (!(rel >= 1 && rel <= 5) || (feeling && !FEELINGS.includes(feeling))) {
       throw new HttpsError("invalid-argument", "Bad input.");
     }
+
+    const feelText = feeling
+      ? `I feel ${feeling.toLowerCase()}.`
+      : "I prefer not to say how I feel.";
 
     const res = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -30,19 +44,20 @@ exports.generatePrayer = onCall(
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        max_tokens: 150,
+        max_tokens: 160,
         temperature: 0.8,
         messages: [
           {
             role: "system",
             content:
-              "You write short Christian prayers (3 to 5 sentences, under 70 words) " +
+              "You write short Christian prayers (3 to 5 sentences, under 75 words) " +
               "for a person to read out loud. Use simple words, warm tone, first person. " +
-              "End with Amen. Output only the prayer.",
+              STYLE[kind] +
+              " End with Amen. Output only the prayer.",
           },
           {
             role: "user",
-            content: `My relationship with God today feels ${LEVELS[rel - 1]}. I feel ${feeling.toLowerCase()}.`,
+            content: `My relationship with God today feels ${LEVELS[rel - 1]}. ${feelText}`,
           },
         ],
       }),

@@ -29,6 +29,29 @@ class SettingsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Card(
+          child: Column(children: [
+            SwitchListTile(
+              value: s.remindersOn,
+              onChanged: s.setRemindersOn,
+              title: const Text('Prayer reminders 🔔'),
+              subtitle: const Text('A gentle message morning and night'),
+            ),
+            ListTile(
+              leading: const Pic('sun', size: 34),
+              title: const Text('Morning prayer'),
+              trailing: Text(_fmt(context, s.morningMin)),
+              onTap: () => _pickTime(context, s.morningMin, (m) => s.setTimes(morning: m)),
+            ),
+            ListTile(
+              leading: const Pic('moon', size: 34),
+              title: const Text('Night prayer'),
+              trailing: Text(_fmt(context, s.nightMin)),
+              onTap: () => _pickTime(context, s.nightMin, (m) => s.setTimes(night: m)),
+            ),
+          ]),
+        ),
+        const SizedBox(height: 12),
+        Card(
           child: SwitchListTile(
             value: s.blockingOn,
             onChanged: s.setBlockingOn,
@@ -89,6 +112,15 @@ class SettingsScreen extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _fmt(BuildContext c, int m) =>
+      TimeOfDay(hour: m ~/ 60, minute: m % 60).format(c);
+
+  Future<void> _pickTime(BuildContext c, int cur, void Function(int) save) async {
+    final t = await showTimePicker(
+        context: c, initialTime: TimeOfDay(hour: cur ~/ 60, minute: cur % 60));
+    if (t != null) save(t.hour * 60 + t.minute);
   }
 
   void _confirmDelete(BuildContext context) {

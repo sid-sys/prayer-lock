@@ -4,6 +4,7 @@ import '../data/verses.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import 'prayer_flow.dart';
+import 'streak_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -14,71 +15,122 @@ class HomeScreen extends StatelessWidget {
     return '${d.inMinutes + 1}m';
   }
 
+  String _time(BuildContext c, int mins) =>
+      TimeOfDay(hour: mins ~/ 60, minute: mins % 60).format(c);
+
+  void _pray(BuildContext c, String kind) => Navigator.push(
+      c, MaterialPageRoute(builder: (_) => PrayerFlow(kind: kind)));
+
   @override
   Widget build(BuildContext context) {
     final s = context.watch<AppState>();
     final v = verseOfDay();
+    final hour = DateTime.now().hour;
+    final greeting = hour < 12
+        ? 'Good morning ☀️'
+        : hour < 18
+            ? 'Good afternoon 🌤️'
+            : 'Good evening 🌙';
+    final due = s.dueSession;
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
         Row(
           children: [
-            Expanded(child: Text('Prayer Lock', style: serif(26))),
-            const Icon(Icons.local_fire_department, color: AppColors.gold),
-            const SizedBox(width: 4),
-            Text('${s.streak}',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(greeting, style: h(26)),
+                  Text('Walk with Jesus today.',
+                      style: h(15, color: AppColors.soft, w: FontWeight.w500)),
+                ],
+              ),
+            ),
+            GestureDetector(
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const StreakScreen())),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                    color: AppColors.card, borderRadius: BorderRadius.circular(22)),
+                child: Row(children: [
+                  const Text('🔥', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 6),
+                  Text('${s.streak}', style: h(20)),
+                ]),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              children: [
-                Icon(s.isUnlocked ? Icons.lock_open : Icons.lock,
-                    size: 56, color: AppColors.gold),
-                const SizedBox(height: 12),
-                Text(
-                  s.isUnlocked ? 'Your apps are open' : 'Your apps are locked',
-                  style: serif(22),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  s.isUnlocked
-                      ? 'Locks again in ${_left(s.unlockedUntil!)}'
-                      : '${s.lockedApps.length} apps wait for your prayer',
-                  style: const TextStyle(color: AppColors.soft),
-                ),
-                const SizedBox(height: 20),
-                FilledButton.icon(
-                  onPressed: () => Navigator.push(context,
-                      MaterialPageRoute(builder: (_) => const PrayerFlow())),
-                  icon: const Icon(Icons.favorite),
-                  label: Text(s.isUnlocked ? 'Pray again' : 'Pray now'),
-                ),
-              ],
-            ),
+
+        // Prayer waiting now
+        if (due != null)
+          PastelCard(
+            color: due == 'morning' ? AppColors.yellow : AppColors.blue,
+            onTap: () => _pray(context, due),
+            child: Row(children: [
+              Pic(due == 'morning' ? 'sun' : 'moon', size: 72),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(due == 'morning' ? 'Morning prayer is waiting' : 'Night prayer is waiting',
+                      style: h(20, color: AppColors.ink)),
+                  const SizedBox(height: 4),
+                  Text(
+                      due == 'morning'
+                          ? 'Start your day in His presence 🙏'
+                          : 'Leave your worries with Him 💛',
+                      style: h(14, color: AppColors.ink, w: FontWeight.w500)),
+                ]),
+              ),
+              const ArrowDot(),
+            ]),
           ),
+        if (due != null) const SizedBox(height: 14),
+
+        Row(children: [
+          Expanded(child: _session(context, s, 'morning', 'Morning', 'sun', AppColors.yellow, s.morningMin)),
+          const SizedBox(width: 12),
+          Expanded(child: _session(context, s, 'night', 'Night', 'moon', AppColors.blue, s.nightMin)),
+        ]),
+        const SizedBox(height: 14),
+
+        // Distractions
+        PastelCard(
+          color: s.isUnlocked ? AppColors.mint : AppColors.pink,
+          onTap: () => _pray(context, 'gate'),
+          child: Row(children: [
+            Pic(s.isUnlocked ? 'unlock' : 'lock', size: 64),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(s.isUnlocked ? 'Your apps are open' : 'Your apps are locked',
+                    style: h(20, color: AppColors.ink)),
+                const SizedBox(height: 4),
+                Text(
+                    s.isUnlocked
+                        ? 'Locks again in ${_left(s.unlockedUntil!)}'
+                        : '${s.lockedApps.length} apps wait for your prayer',
+                    style: h(14, color: AppColors.ink, w: FontWeight.w500)),
+              ]),
+            ),
+            const ArrowDot(),
+          ]),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            _stat('Streak', '${s.streak} days', Icons.local_fire_department),
-            const SizedBox(width: 12),
-            _stat('Prayers', '${s.totalPrayers}', Icons.favorite),
-          ],
-        ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
+
+        // Verse
         Card(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('VERSE OF THE DAY',
-                    style: TextStyle(
-                        letterSpacing: 1.5, fontSize: 12, color: AppColors.gold)),
+                Text('📖  VERSE OF THE DAY',
+                    style: h(12, color: AppColors.yellow, w: FontWeight.w800)),
                 const SizedBox(height: 12),
                 Text('"${v.text}"', style: serif(19)),
                 const SizedBox(height: 10),
@@ -91,21 +143,26 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _stat(String label, String value, IconData icon) => Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.all(18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(icon, color: AppColors.gold),
-                const SizedBox(height: 8),
-                Text(value,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                Text(label, style: const TextStyle(color: AppColors.soft)),
-              ],
-            ),
-          ),
-        ),
-      );
+  Widget _session(BuildContext c, AppState s, String kind, String label, String pic,
+      Color color, int mins) {
+    final done = s.doneToday(kind);
+    return PastelCard(
+      color: done ? color.withValues(alpha: 0.55) : color,
+      onTap: () => _pray(c, kind),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Pic(pic, size: 46),
+            const Spacer(),
+            if (done) const Icon(Icons.check_circle, color: AppColors.ink),
+          ]),
+          const SizedBox(height: 10),
+          Text('$label prayer', style: h(17, color: AppColors.ink)),
+          Text(done ? 'Done today 🙌' : _time(c, mins),
+              style: h(14, color: AppColors.ink, w: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
 }
