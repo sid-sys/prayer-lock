@@ -117,6 +117,11 @@ class _AuthScreenState extends State<AuthScreen> {
                     icon: const Icon(Icons.g_mobiledata, size: 30),
                     label: const Text('Continue with Google'),
                   ),
+                  const SizedBox(height: 10),
+                  TextButton(
+                    onPressed: _busy ? null : () => _run(AuthService.signInGuest),
+                    child: const Text('Continue as guest'),
+                  ),
                   if (AuthService.appleAvailable) ...[
                     const SizedBox(height: 10),
                     OutlinedButton.icon(

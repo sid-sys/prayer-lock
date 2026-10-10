@@ -16,6 +16,8 @@ class AuthService {
   static Future<void> signUpEmail(String email, String pass) =>
       _auth.createUserWithEmailAndPassword(email: email.trim(), password: pass);
 
+  static Future<void> signInGuest() => _auth.signInAnonymously();
+
   static Future<void> resetPassword(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
 
