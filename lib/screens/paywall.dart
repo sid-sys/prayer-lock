@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import '../config.dart';
 import '../services/purchase_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import 'legal_screen.dart';
 
 /// Hard paywall: no close button. Style follows the reference screens.
 class Paywall extends StatefulWidget {
@@ -17,11 +19,20 @@ class _PaywallState extends State<Paywall> {
   String _plan = 'yearly';
   bool _busy = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<AppState>().logPaywallView();
+    });
+  }
+
   static const _orange = Color(0xFFFF9500);
   static const _ink = Color(0xFF1C1B22);
 
   Future<void> _start() async {
     setState(() => _busy = true);
+    await context.read<AppState>().logPaymentAttempt();
     final ok = await PurchaseService.buy(_plan);
     if (!mounted) return;
     if (ok) {
@@ -131,11 +142,23 @@ class _PaywallState extends State<Paywall> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        TextButton(onPressed: () {}, child: const Text('Terms', style: TextStyle(color: Colors.black45))),
-                        TextButton(onPressed: () {}, child: const Text('Privacy', style: TextStyle(color: Colors.black45))),
+                        TextButton(
+                            onPressed: () => Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => const LegalScreen(LegalDoc.terms))),
+                            child: const Text('Terms', style: TextStyle(color: Colors.black45))),
+                        TextButton(
+                            onPressed: () => Navigator.push(context,
+                                MaterialPageRoute(builder: (_) => const LegalScreen(LegalDoc.privacy))),
+                            child: const Text('Privacy', style: TextStyle(color: Colors.black45))),
                         TextButton(onPressed: _restore, child: const Text('Restore', style: TextStyle(color: Colors.black45))),
                       ],
                     ),
+                    if (kMockBuild)
+                      TextButton(
+                        onPressed: () => context.read<AppState>().testSkipPaywall(),
+                        child: const Text('Skip paywall (test build only)',
+                            style: TextStyle(color: Color(0xFFE53935), fontWeight: FontWeight.w700)),
+                      ),
                   ],
                 ),
               ),

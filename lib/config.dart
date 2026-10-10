@@ -1,0 +1,16 @@
+/// App-wide settings.
+///
+/// Build the real app with:  flutter build apk --dart-define=MOCK=false
+const kDeveloperName = 'Tetra Developers';
+const kContactEmail = 'tetraheaddevelopers@gmail.com';
+
+/// Only this Google account can open the admin panel in the real build.
+const kAdminEmail = 'sidharthbabu9@gmail.com';
+
+/// Mock build: the admin panel is open to everyone and shows made-up data.
+/// Turn off for the real release.
+const bool kMockBuild = bool.fromEnvironment('MOCK', defaultValue: true);
+
+/// Fills the app with 9 days of sample prayers (for store screenshots).
+/// Not saved to the phone. Run with:  --dart-define=DEMO=true
+const bool kDemoData = bool.fromEnvironment('DEMO', defaultValue: false);

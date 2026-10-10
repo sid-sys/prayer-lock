@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
+import 'screens/commit_screen.dart';
 import 'screens/prayer_flow.dart';
 import 'screens/onboarding.dart';
 import 'screens/paywall.dart';
@@ -13,6 +14,7 @@ import 'services/blocker_service.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
 import 'theme.dart';
+import 'widgets/badge_toast.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,6 +65,7 @@ class _PrayerLockAppState extends State<PrayerLockApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: navigatorKey,
+      builder: (context, child) => BadgeToaster(child: child ?? const SizedBox()),
       title: 'Prayer Lock',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
@@ -89,7 +92,9 @@ class _GateState extends State<_Gate> {
   Widget build(BuildContext context) {
     final onboarded = context.select<AppState, bool>((s) => s.onboarded);
     final entitled = context.select<AppState, bool>((s) => s.entitled);
+    final committed = context.select<AppState, bool>((s) => s.committed);
     if (!onboarded) return const Onboarding();
+    if (!committed) return const CommitScreen();
     if (!entitled) return const Paywall();
     return StreamBuilder<User?>(
       stream: _auth,

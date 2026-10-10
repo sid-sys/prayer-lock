@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../config.dart';
 import '../services/blocker_service.dart';
 import '../services/notification_service.dart';
 
@@ -45,6 +46,13 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
 
   bool onboarded = false;
+  Set<String> seenBadges = {}; // badges already celebrated
+  final List<PrayerBadge> _badgeQueue = [];
+  bool committed = false; // held the "commit my devotion" button
+  int paywallViews = 0;
+  int paymentAttempts = 0;
+  bool cancelled = false; // plan will not renew
+  DateTime? accessUntil; // when access ends after cancelling
   DateTime? trialStart;
   String plan = 'yearly';
   int morningMin = 7 * 60;
@@ -66,10 +74,24 @@ class AppState extends ChangeNotifier {
     final t = _p.getString('trialStart');
     trialStart = t == null ? null : DateTime.tryParse(t);
     plan = _p.getString('plan') ?? 'yearly';
+    committed = _p.getBool('committed') ?? false;
+    paywallViews = _p.getInt('paywallViews') ?? 0;
+    paymentAttempts = _p.getInt('paymentAttempts') ?? 0;
+    cancelled = _p.getBool('cancelled') ?? false;
+    final au = _p.getString('accessUntil');
+    accessUntil = au == null ? null : DateTime.tryParse(au);
     morningMin = _p.getInt('morningMin') ?? morningMin;
     nightMin = _p.getInt('nightMin') ?? nightMin;
     remindersOn = _p.getBool('remindersOn') ?? true;
     goals = _p.getStringList('goals') ?? [];
+    if (kDemoData) _seedDemo();
+    final seen = _p.getStringList('seenBadges');
+    if (seen == null) {
+      seenBadges = badges.where((b) => b.unlocked).map((b) => b.title).toSet();
+      await _p.setStringList('seenBadges', seenBadges.toList());
+    } else {
+      seenBadges = seen.toSet();
+    }
     loaded = true;
     notifyListeners();
   }
@@ -77,7 +99,171 @@ class AppState extends ChangeNotifier {
   // ---------- access / paywall ----------
 
   /// True when the user may use the app (trial running or subscribed).
-  bool get entitled => trialStart != null;
+  bool get entitled {
+    if (trialStart == null) return false;
+    if (cancelled && accessUntil != null && DateTime.now().isAfter(accessUntil!)) {
+      return false;
+    }
+    return true;
+  }
+
+  bool get inTrial => trialStart != null && DateTime.now().isBefore(trialEnds!);
+
+  int get trialDaysLeft =>
+      inTrial ? trialEnds!.difference(DateTime.now()).inDays + 1 : 0;
+
+  /// When the plan renews (or ends, if cancelled). Mock billing: one period
+  /// after the trial.
+  DateTime get nextBilling {
+    final base = trialEnds ?? DateTime.now();
+    final period = Duration(days: plan == 'yearly' ? 365 : 30);
+    var d = base;
+    while (d.isBefore(DateTime.now())) {
+      d = d.add(period);
+    }
+    return d;
+  }
+
+  // ---------- badge toasts ----------
+
+  bool get hasBadgeToast => _badgeQueue.isNotEmpty;
+
+  PrayerBadge? takeBadge() => _badgeQueue.isEmpty ? null : _badgeQueue.removeAt(0);
+
+  /// Show a toast for this badge (also used by the test tools).
+  void queueBadge(PrayerBadge b) {
+    _badgeQueue.add(b);
+    notifyListeners();
+  }
+
+  /// Find badges that were just earned. The toast widget shows them.
+  void _checkBadges() {
+    var changed = false;
+    for (final b in badges) {
+      if (b.unlocked && !seenBadges.contains(b.title)) {
+        seenBadges.add(b.title);
+        _badgeQueue.add(b);
+        changed = true;
+      }
+    }
+    if (changed) _p.setStringList('seenBadges', seenBadges.toList());
+  }
+
+  Future<void> commit() async {
+    committed = true;
+    await _p.setBool('committed', true);
+    notifyListeners();
+  }
+
+  Future<void> logPaywallView() async {
+    paywallViews++;
+    await _p.setInt('paywallViews', paywallViews);
+  }
+
+  Future<void> logPaymentAttempt() async {
+    paymentAttempts++;
+    await _p.setInt('paymentAttempts', paymentAttempts);
+  }
+
+  /// Move to another plan. Mock billing: nothing is charged.
+  Future<void> changePlan(String planId) async {
+    plan = planId;
+    cancelled = false;
+    accessUntil = null;
+    await _p.setString('plan', planId);
+    await _p.setBool('cancelled', false);
+    await _p.remove('accessUntil');
+    notifyListeners();
+  }
+
+  Future<void> cancelPlan() async {
+    cancelled = true;
+    accessUntil = nextBilling; // keeps access until the paid period ends
+    await _p.setBool('cancelled', true);
+    await _p.setString('accessUntil', accessUntil!.toIso8601String());
+    notifyListeners();
+  }
+
+  Future<void> resumePlan() async {
+    cancelled = false;
+    accessUntil = null;
+    await _p.setBool('cancelled', false);
+    await _p.remove('accessUntil');
+    notifyListeners();
+  }
+
+  /// TEST ONLY: show onboarding, the commit screen and the paywall again.
+  /// Prayers and locked apps stay.
+  Future<void> redoOnboarding() async {
+    onboarded = false;
+    committed = false;
+    trialStart = null;
+    cancelled = false;
+    accessUntil = null;
+    paywallViews = 0;
+    paymentAttempts = 0;
+    await _p.setBool('onboarded', false);
+    await _p.setBool('committed', false);
+    await _p.remove('trialStart');
+    await _p.setBool('cancelled', false);
+    await _p.remove('accessUntil');
+    await _p.setInt('paywallViews', 0);
+    await _p.setInt('paymentAttempts', 0);
+    notifyListeners();
+  }
+
+  /// TEST ONLY: get past the paywall without paying.
+  Future<void> testSkipPaywall() async {
+    trialStart = DateTime.now();
+    await _p.setString('trialStart', trialStart!.toIso8601String());
+    notifyListeners();
+  }
+
+  /// Wipe everything on this phone (used after deleting the account).
+  Future<void> resetAll() async {
+    await _p.clear();
+    lockedApps = [];
+    history = [];
+    unlockedUntil = null;
+    scheduleMinutes = 0;
+    blockingOn = true;
+    onboarded = false;
+    committed = false;
+    paywallViews = 0;
+    paymentAttempts = 0;
+    cancelled = false;
+    accessUntil = null;
+    trialStart = null;
+    plan = 'yearly';
+    goals = [];
+    await _sync();
+    notifyListeners();
+  }
+
+  /// Sample data for store screenshots. Kept in memory only.
+  void _seedDemo() {
+    final now = DateTime.now();
+    const feelings = ['Grateful', 'Hopeful', 'Peaceful', 'Tired', 'Anxious', 'Grateful', 'Hopeful', 'Peaceful', 'Grateful'];
+    const rels = [4, 3, 5, 2, 3, 4, 5, 4, 5];
+    const prayers = [
+      'Good morning, Jesus. Thank You for this new day. Guide my steps, guard my heart, and help me love the people I meet today. Amen.',
+      'Thank You, Jesus, for this day. I lay my worries at Your feet and ask for peaceful rest tonight. Amen.',
+    ];
+    history = [];
+    for (var i = 8; i >= 0; i--) {
+      final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
+      history.add(PrayerEntry(day.add(const Duration(hours: 7, minutes: 5)), rels[8 - i],
+          feelings[8 - i], kind: 'morning', prayer: prayers[0]));
+      history.add(PrayerEntry(day.add(const Duration(hours: 21, minutes: 40)),
+          rels[(i + 3) % 9], feelings[(i + 2) % 9], kind: 'night', prayer: prayers[1]));
+      if (i % 2 == 0) {
+        history.add(PrayerEntry(day.add(const Duration(hours: 13)), 4, 'Hopeful', kind: 'gate'));
+      }
+    }
+    history.removeWhere((e) => e.date.isAfter(now));
+    lockedApps = ['com.instagram.android', 'com.zhiliaoapp.musically', 'com.google.android.youtube',
+      'com.whatsapp.w4b', 'com.facebook.katana'];
+  }
 
   DateTime? get trialEnds => trialStart?.add(const Duration(days: 7));
 
@@ -307,6 +493,7 @@ class AppState extends ChangeNotifier {
     lockedApps = lockedApps.contains(pkg)
         ? (List.of(lockedApps)..remove(pkg))
         : (List.of(lockedApps)..add(pkg));
+    _checkBadges();
     notifyListeners();
     await _p.setStringList('locked', lockedApps);
     await _sync();
@@ -314,6 +501,7 @@ class AppState extends ChangeNotifier {
 
   Future<void> setAll(List<String> pkgs) async {
     lockedApps = pkgs;
+    _checkBadges();
     await _p.setStringList('locked', lockedApps);
     await _sync();
     notifyListeners();
@@ -342,6 +530,7 @@ class AppState extends ChangeNotifier {
     await _p.setString('until', unlockedUntil!.toIso8601String());
     await _sync();
     await rescheduleReminders();
+    _checkBadges();
     notifyListeners();
   }
 
