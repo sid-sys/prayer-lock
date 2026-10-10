@@ -39,13 +39,7 @@ class InsightsScreen extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       children: [
         Center(
-          child: Container(
-            width: 92,
-            height: 92,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-            child: const Pic('logo', size: 68),
-          ),
+          child: const Pic('logo', size: 96),
         ),
         const SizedBox(height: 10),
         Center(child: Text(name, style: h(20))),
@@ -200,7 +194,7 @@ class InsightsScreen extends StatelessWidget {
           alignment: Alignment.topCenter,
           decoration: BoxDecoration(
             color: prayed
-                ? moodColor(mood).withValues(alpha: 0.55)
+                ? levelColor(mood).withValues(alpha: 0.5)
                 : const Color(0xFFF1E4D6),
             borderRadius: BorderRadius.circular(20),
           ),
@@ -253,7 +247,7 @@ class _MiniFacePainter extends CustomPainter {
   @override
   void paint(Canvas c, Size s) {
     final r = s.width / 2;
-    c.drawCircle(Offset(r, r), r, Paint()..color = moodColor(t));
+    c.drawCircle(Offset(r, r), r, Paint()..color = levelColor(t));
     final ink = Paint()..color = const Color(0xFF14141C);
     c.drawOval(Rect.fromCenter(center: Offset(r * 0.68, r * 0.82), width: r * 0.26, height: r * 0.38), ink);
     c.drawOval(Rect.fromCenter(center: Offset(r * 1.32, r * 0.82), width: r * 0.26, height: r * 0.38), ink);

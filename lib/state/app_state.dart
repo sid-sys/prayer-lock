@@ -244,7 +244,7 @@ class AppState extends ChangeNotifier {
   void _seedDemo() {
     final now = DateTime.now();
     const feelings = ['Grateful', 'Hopeful', 'Peaceful', 'Tired', 'Anxious', 'Grateful', 'Hopeful', 'Peaceful', 'Grateful'];
-    const rels = [4, 3, 5, 2, 3, 4, 5, 4, 5];
+    const rels = [2, 1, 3, 5, 2, 4, 5, 3, 5];
     const prayers = [
       'Good morning, Jesus. Thank You for this new day. Guide my steps, guard my heart, and help me love the people I meet today. Amen.',
       'Thank You, Jesus, for this day. I lay my worries at Your feet and ask for peaceful rest tonight. Amen.',
@@ -255,7 +255,7 @@ class AppState extends ChangeNotifier {
       history.add(PrayerEntry(day.add(const Duration(hours: 7, minutes: 5)), rels[8 - i],
           feelings[8 - i], kind: 'morning', prayer: prayers[0]));
       history.add(PrayerEntry(day.add(const Duration(hours: 21, minutes: 40)),
-          rels[(i + 3) % 9], feelings[(i + 2) % 9], kind: 'night', prayer: prayers[1]));
+          rels[8 - i], feelings[(i + 2) % 9], kind: 'night', prayer: prayers[1]));
       if (i % 2 == 0) {
         history.add(PrayerEntry(day.add(const Duration(hours: 13)), 4, 'Hopeful', kind: 'gate'));
       }

@@ -171,3 +171,16 @@ class _SliderPainter extends CustomPainter {
   @override
   bool shouldRepaint(_SliderPainter o) => o.v != v;
 }
+
+/// Five clearly different colors for the five closeness levels
+/// (used by the Insights chart: one color per day).
+Color levelColor(double t) {
+  const colors = [
+    Color(0xFF8E9BFF), // blue: distant
+    Color(0xFFB58CFF), // purple: struggling
+    Color(0xFF4FCB9B), // green: okay
+    Color(0xFFFFC22E), // yellow: close
+    Color(0xFFFF6FAE), // pink: very close
+  ];
+  return colors[(t.clamp(0.0, 1.0) * 4).round()];
+}
