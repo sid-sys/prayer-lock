@@ -3,7 +3,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 import 'admin/admin_dashboard.dart';
 import 'config.dart';
 import 'firebase_options.dart';
@@ -32,8 +32,8 @@ Future<void> main() async {
   await NotificationService.init();
   BlockerService.preload(); // load the app list in the background
   if (kShotMode) {
-    final p = await SharedPreferences.getInstance();
-    _shot = p.getString('shot') ?? 'home';
+    // The workflow starts the app with the environment variable SHOT=<screen>.
+    _shot = Platform.environment['SHOT'] ?? 'home';
   }
   runApp(ChangeNotifierProvider.value(value: state, child: const PrayerLockApp()));
 }

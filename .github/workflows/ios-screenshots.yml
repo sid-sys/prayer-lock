@@ -66,10 +66,9 @@ jobs:
 
           shoot () {
             NAME="$1"
-            # The app reads the setting "shot" (shared_preferences key "flutter.shot")
             xcrun simctl terminate "$UDID" "$APP" 2>/dev/null || true
-            xcrun simctl spawn "$UDID" defaults write "$APP" "flutter.shot" -string "$NAME"
-            xcrun simctl launch "$UDID" "$APP"
+            # SIMCTL_CHILD_ makes the variable reach the app as SHOT=<screen>
+            SIMCTL_CHILD_SHOT="$NAME" xcrun simctl launch "$UDID" "$APP"
             sleep 9
             xcrun simctl io "$UDID" screenshot "screenshots/$NAME.png"
             echo "saved $NAME"
