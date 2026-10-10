@@ -1,1 +1,9 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"prayerlock-core-app","appId":"1:110455972954:android:239c73f3e606dbe98ca463","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"prayerlock-core-app","configurations":{"android":"1:110455972954:android:239c73f3e606dbe98ca463","ios":"1:110455972954:ios:77fe94e6ef7e84f48ca463"}}}}}}
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", ".git", "*.local"]
+    }
+  ]
+}
