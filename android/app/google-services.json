@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "110455972954",
+    "project_id": "prayerlock-core-app",
+    "storage_bucket": "prayerlock-core-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:110455972954:android:239c73f3e606dbe98ca463",
+        "android_client_info": {
+          "package_name": "com.coreinteractive.prayer_lock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBH6F3Y0SnXOx4rnx-RrT4s2InFxoIzR2k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
