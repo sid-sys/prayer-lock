@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const bg = Color(0xFF0B0B10);
-  static const card = Color(0xFF1A1A22);
+  static const bg = Color(0xFFFFC999);
+  static const card = Color(0xFFFFF3E6);
   static const peach = Color(0xFFFFC999);
   static const blue = Color(0xFF9FA8FF);
   static const mint = Color(0xFF7FD9B8);
   static const pink = Color(0xFFFF9CC9);
   static const yellow = Color(0xFFFFE27A);
-  static const gold = yellow;
-  static const soft = Color(0xFFA9AECB);
+  static const gold = Color(0xFFFF8A3D);
+  static const soft = Color(0xFF6B5444);
   static const ink = Color(0xFF14141C);
 }
 
 ThemeData buildTheme() {
-  final base = ThemeData.dark(useMaterial3: true);
+  final base = ThemeData.light(useMaterial3: true);
   return base.copyWith(
     scaffoldBackgroundColor: AppColors.bg,
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.peach,
-      onPrimary: AppColors.ink,
+    colorScheme: const ColorScheme.light(
+      primary: AppColors.ink,
+      onPrimary: Colors.white,
       surface: AppColors.card,
     ),
     appBarTheme: const AppBarTheme(
       backgroundColor: Colors.transparent,
       elevation: 0,
       centerTitle: true,
+      foregroundColor: AppColors.ink,
+      systemOverlayStyle: SystemUiOverlayStyle.dark,
     ),
     cardTheme: CardThemeData(
       color: AppColors.card,
@@ -35,8 +38,8 @@ ThemeData buildTheme() {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: Colors.white,
-        foregroundColor: AppColors.ink,
+        backgroundColor: AppColors.ink,
+        foregroundColor: Colors.white,
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
@@ -46,14 +49,14 @@ ThemeData buildTheme() {
 }
 
 /// Headline font (round and friendly, close to the reference).
-TextStyle h(double size, {Color color = Colors.white, FontWeight w = FontWeight.w700}) =>
+TextStyle h(double size, {Color color = AppColors.ink, FontWeight w = FontWeight.w700}) =>
     GoogleFonts.kumbhSans(fontSize: size, height: 1.2, color: color, fontWeight: w);
 
 /// Bible and prayer text.
 TextStyle serif(double size, {Color? color}) => GoogleFonts.lora(
       fontSize: size,
       height: 1.5,
-      color: color ?? Colors.white,
+      color: color ?? AppColors.ink,
     );
 
 /// Picture from the sprite sheet.

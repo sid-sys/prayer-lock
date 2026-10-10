@@ -81,7 +81,7 @@ class _PrayerFlowState extends State<PrayerFlow> {
           leading: _step == _Step.done
               ? const SizedBox()
               : IconButton(
-                  icon: Icon(Icons.close, color: light ? AppColors.ink : Colors.white),
+                  icon: const Icon(Icons.close, color: AppColors.ink),
                   onPressed: () => Navigator.pop(context)),
         ),
         body: SafeArea(
@@ -199,7 +199,7 @@ class _PrayerFlowState extends State<PrayerFlow> {
                       if (widget.kind == 'morning') ...[
                         Text('"${v.text}"',
                             textAlign: TextAlign.center,
-                            style: serif(16, color: AppColors.yellow)),
+                            style: serif(16, color: AppColors.ink)),
                         Text(v.ref, style: const TextStyle(color: AppColors.soft)),
                         const SizedBox(height: 22),
                       ],
@@ -244,7 +244,7 @@ class _PrayerFlowState extends State<PrayerFlow> {
                   Expanded(
                       child: Text(o.$2,
                           style: h(18,
-                              color: _minutes == o.$1 ? AppColors.ink : Colors.white))),
+                              color: AppColors.ink))),
                   if (_minutes == o.$1) const Icon(Icons.check_circle, color: AppColors.ink),
                 ]),
               ),
@@ -270,7 +270,7 @@ class _PrayerFlowState extends State<PrayerFlow> {
         const SizedBox(height: 28),
         Text('"${v.text}"', textAlign: TextAlign.center, style: serif(21)),
         const SizedBox(height: 8),
-        Text(v.ref, style: const TextStyle(color: AppColors.yellow)),
+        Text(v.ref, style: const TextStyle(color: AppColors.soft)),
         if (widget.kind == 'night') ...[
           const SizedBox(height: 18),
           Text('Rest peacefully. You are not alone 💛',

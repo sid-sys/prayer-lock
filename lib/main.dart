@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'screens/auth_screen.dart';
@@ -13,6 +14,7 @@ import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   final state = AppState();
   await state.load();

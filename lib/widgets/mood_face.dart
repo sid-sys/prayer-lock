@@ -66,9 +66,9 @@ class _FacePainter extends CustomPainter {
       c.drawCircle(Offset(px + pr * 0.30, py + pr * 0.30), pr * 0.12, Paint()..color = Colors.white);
 
       // Sad lid drooping on the eye.
-      final lid = (1 - t).clamp(0.0, 1.0);
-      if (lid > 0.25) {
-        final k = (lid - 0.25) / 0.75;
+      final lid = ((0.5 - t) * 2).clamp(0.0, 1.0);
+      if (lid > 0.03) {
+        final k = lid;
         c.save();
         c.clipPath(Path()..addOval(rect));
         final drop = rect.height * 0.38 * k;

@@ -55,7 +55,7 @@ class StreakScreen extends StatelessWidget {
                         height: 38,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: s.prayedOn(d) ? AppColors.yellow : const Color(0xFF2A2A34),
+                          color: s.prayedOn(d) ? AppColors.yellow : const Color(0xFFE8D2BC),
                         ),
                         child: s.prayedOn(d)
                             ? const Center(child: Text('🔥', style: TextStyle(fontSize: 18)))

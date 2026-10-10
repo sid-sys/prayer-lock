@@ -24,15 +24,15 @@ class _OnboardingState extends State<Onboarding> {
 
   // Page colors: pastel screens use dark ink, dark screens use white.
   static const _bgs = [
-    AppColors.peach,
     AppColors.bg,
-    AppColors.blue,
     AppColors.bg,
-    AppColors.mint,
+    AppColors.bg,
+    AppColors.bg,
+    AppColors.bg,
     AppColors.bg,
   ];
 
-  bool get _light => _bgs[_i] != AppColors.bg;
+  bool get _light => true;
   Color get _fg => _light ? AppColors.ink : Colors.white;
 
   void _next() {
@@ -345,7 +345,7 @@ class _OnboardingState extends State<Onboarding> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text('Block everything for now',
-                    style: h(18, color: _blockAll ? AppColors.ink : Colors.white)),
+                    style: h(18, color: AppColors.ink)),
               ),
               if (_blockAll) const Icon(Icons.check_circle, color: AppColors.ink),
             ]),
@@ -359,7 +359,7 @@ class _OnboardingState extends State<Onboarding> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text("I'll do this later",
-                    style: h(18, color: !_blockAll ? AppColors.ink : Colors.white)),
+                    style: h(18, color: AppColors.ink)),
               ),
               if (!_blockAll) const Icon(Icons.check_circle, color: AppColors.ink),
             ]),

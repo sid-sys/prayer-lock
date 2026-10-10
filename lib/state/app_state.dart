@@ -208,10 +208,13 @@ class AppState extends ChangeNotifier {
   // ---------- locked apps ----------
 
   Future<void> toggleApp(String pkg) async {
-    lockedApps.contains(pkg) ? lockedApps.remove(pkg) : lockedApps.add(pkg);
+    // Change the list first so quick taps on many apps never get lost.
+    lockedApps = lockedApps.contains(pkg)
+        ? (List.of(lockedApps)..remove(pkg))
+        : (List.of(lockedApps)..add(pkg));
+    notifyListeners();
     await _p.setStringList('locked', lockedApps);
     await _sync();
-    notifyListeners();
   }
 
   Future<void> setAll(List<String> pkgs) async {

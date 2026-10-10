@@ -130,7 +130,7 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('📖  VERSE OF THE DAY',
-                    style: h(12, color: AppColors.yellow, w: FontWeight.w800)),
+                    style: h(12, color: AppColors.gold, w: FontWeight.w800)),
                 const SizedBox(height: 12),
                 Text('"${v.text}"', style: serif(19)),
                 const SizedBox(height: 10),
