@@ -10,7 +10,7 @@ require 'xcodeproj'
 
 TEAM = 'W3QA63P2YL'
 BASE_ID = 'com.coreinteractive.prayerLock'
-DEPLOYMENT = '15.0'
+DEPLOYMENT = '16.0'
 
 project = Xcodeproj::Project.open('Runner.xcodeproj')
 runner = project.targets.find { |t| t.name == 'Runner' }
@@ -19,6 +19,12 @@ abort 'Runner target not found' unless runner
 if project.targets.any? { |t| t.name == 'ActivityMonitor' }
   puts 'Screen Time targets already in the project. Nothing to do.'
   exit 0
+end
+
+# Screen Time for one person needs iOS 16. Set it for the whole project.
+project.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = DEPLOYMENT }
+project.targets.each do |t|
+  t.build_configurations.each { |c| c.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = DEPLOYMENT }
 end
 
 # ---------- shared file ----------
