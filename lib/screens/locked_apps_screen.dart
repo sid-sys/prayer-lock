@@ -1,4 +1,7 @@
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
+import '../config.dart';
+import 'ios_locked_apps.dart';
 import 'package:installed_apps/installed_apps.dart';
 import 'package:provider/provider.dart';
 import '../services/blocker_service.dart';
@@ -227,6 +230,10 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // On a real iPhone Apple gives no app list. Use Apple's picker instead.
+    if (defaultTargetPlatform == TargetPlatform.iOS && !kShotMode) {
+      return const IosLockedApps();
+    }
     final s = context.read<AppState>();
     return CustomScrollView(
       slivers: [

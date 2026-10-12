@@ -72,11 +72,13 @@ class BlockerService {
   static Future<void> update({
     required List<String> packages,
     required DateTime? unlockedUntil,
+    bool enabled = true,
   }) async {
     try {
       await _ch.invokeMethod('update', {
         'packages': packages,
         'unlockedUntil': unlockedUntil?.millisecondsSinceEpoch ?? 0,
+        'enabled': enabled,
       });
     } on MissingPluginException {
       // native side not ready yet
@@ -102,6 +104,39 @@ class BlockerService {
       await _ch.invokeMethod('launchApp', {'package': pkg});
     } catch (_) {}
   }
+
+  /// iPhone only: open Apple's app picker. Returns how many apps, categories
+  /// and websites are chosen now.
+  static Future<Map<String, int>> pickApps() async {
+    try {
+      final r = await _ch.invokeMethod<Map>('pickApps');
+      return _counts(r);
+    } catch (_) {
+      return {'apps': 0, 'categories': 0, 'websites': 0};
+    }
+  }
+
+  /// iPhone only: forget the chosen apps and open them all.
+  static Future<void> clearChoice() async {
+    try {
+      await _ch.invokeMethod('clearChoice');
+    } catch (_) {}
+  }
+
+  /// iPhone only: how many apps, categories and websites are chosen.
+  static Future<Map<String, int>> summary() async {
+    try {
+      return _counts(await _ch.invokeMethod<Map>('summary'));
+    } catch (_) {
+      return {'apps': 0, 'categories': 0, 'websites': 0};
+    }
+  }
+
+  static Map<String, int> _counts(Map? m) => {
+        'apps': (m?['apps'] as num?)?.toInt() ?? 0,
+        'categories': (m?['categories'] as num?)?.toInt() ?? 0,
+        'websites': (m?['websites'] as num?)?.toInt() ?? 0,
+      };
 
   static Future<bool> hasPermission() async {
     try {

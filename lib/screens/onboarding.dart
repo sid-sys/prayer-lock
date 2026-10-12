@@ -276,17 +276,18 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
               onTap: BlockerService.requestPermission,
             )
           else
-            PastelCard(
+            _permCard(
               color: AppColors.mint,
-              child: Row(children: [
-                const Text('📵', style: TextStyle(fontSize: 30)),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                      'App blocking: Apple will ask for Screen Time access the first time you lock apps.',
-                      style: h(14, color: AppColors.ink, w: FontWeight.w600)),
-                ),
-              ]),
+              emoji: '📵',
+              title: 'Screen Time access',
+              why:
+                  'Why: to cover the apps YOU choose with a "Pray first" screen. Apple keeps your app choices private on your phone. We never see which apps you pick, and we share nothing.',
+              ok: _a11yOk,
+              action: 'Allow Screen Time',
+              onTap: () async {
+                await BlockerService.requestPermission();
+                await _checkPerms();
+              },
             ),
           const SizedBox(height: 12),
           Text('Not now? You can still continue. App blocking and reminders just stay off until you allow them.',
@@ -475,9 +476,12 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
               style: h(28, color: _fg)),
           const SizedBox(height: 10),
           Text(
-              'Prayer Lock can pause your distracting apps until you pray. You can pick the exact apps later in the Locked apps tab. On Android, you will turn on one phone permission for this.',
+              defaultTargetPlatform == TargetPlatform.iOS
+                  ? 'Prayer Lock can pause your distracting apps until you pray. You pick the apps in the Locked apps tab, using Apple\'s own app picker.'
+                  : 'Prayer Lock can pause your distracting apps until you pray. You can pick the exact apps later in the Locked apps tab. On Android, you will turn on one phone permission for this.',
               style: h(15, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
           const SizedBox(height: 24),
+          if (defaultTargetPlatform != TargetPlatform.iOS)
           PastelCard(
             color: _blockAll ? AppColors.mint : AppColors.card,
             onTap: () => setState(() => _blockAll = true),
@@ -491,9 +495,9 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
               if (_blockAll) const Icon(Icons.check_circle, color: AppColors.ink),
             ]),
           ),
-          const SizedBox(height: 12),
+          if (defaultTargetPlatform != TargetPlatform.iOS) const SizedBox(height: 12),
           PastelCard(
-            color: !_blockAll ? AppColors.yellow : AppColors.card,
+            color: !_blockAll || defaultTargetPlatform == TargetPlatform.iOS ? AppColors.yellow : AppColors.card,
             onTap: () => setState(() => _blockAll = false),
             child: Row(children: [
               const Text('⏳', style: TextStyle(fontSize: 28)),

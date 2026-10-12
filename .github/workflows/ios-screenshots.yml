@@ -24,6 +24,11 @@ jobs:
 
       - run: flutter pub get
 
+      - name: Add the Screen Time extensions to the Xcode project
+        run: |
+          sudo gem install xcodeproj --no-document
+          cd ios && ruby scripts/add_screen_time_targets.rb
+
       - name: Build the app for the simulator (screenshot mode)
         run: flutter build ios --simulator --debug --dart-define=SHOTMODE=true
 

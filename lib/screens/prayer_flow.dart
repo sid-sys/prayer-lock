@@ -358,7 +358,11 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
               final pkg = widget.openAfter;
               if (pkg != null) BlockerService.launchApp(pkg);
             },
-            child: Text(widget.openAfter != null ? 'Amen. Open my app 🙌' : 'Amen 🙌')),
+            child: Text(widget.openAfter == 'ios'
+                ? 'Amen. Go to your app 🙌'
+                : widget.openAfter != null
+                    ? 'Amen. Open my app 🙌'
+                    : 'Amen 🙌')),
       ],
     );
   }

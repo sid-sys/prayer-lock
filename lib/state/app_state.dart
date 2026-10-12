@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
@@ -46,6 +47,7 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
 
   bool onboarded = false;
+  int iosChosen = 0; // iPhone: apps + categories + websites chosen in Apple's picker
   Set<String> seenBadges = {}; // badges already celebrated
   final List<PrayerBadge> _badgeQueue = [];
   bool committed = false; // held the "commit my devotion" button
@@ -74,6 +76,7 @@ class AppState extends ChangeNotifier {
     final t = _p.getString('trialStart');
     trialStart = t == null ? null : DateTime.tryParse(t);
     plan = _p.getString('plan') ?? 'yearly';
+    iosChosen = _p.getInt('iosChosen') ?? 0;
     committed = _p.getBool('committed') ?? false;
     paywallViews = _p.getInt('paywallViews') ?? 0;
     paymentAttempts = _p.getInt('paymentAttempts') ?? 0;
@@ -461,9 +464,9 @@ class AppState extends ChangeNotifier {
         PrayerBadge('Scroll Stopper', 'Pray before opening a locked app 10 times',
             'You paused the scroll. Legend.', 'b_stop', _count('gate') >= 10),
         PrayerBadge('Phone Tamer', 'Lock 5 apps',
-            'Five apps on a leash. Good phone.', 'b_tamer', lockedApps.length >= 5),
+            'Five apps on a leash. Good phone.', 'b_tamer', lockedCount >= 5),
         PrayerBadge('Fort Knox', 'Lock 20 apps',
-            'Nobody scrolls past you.', 'b_vault', lockedApps.length >= 20),
+            'Nobody scrolls past you.', 'b_vault', lockedCount >= 20),
         PrayerBadge('Honest Heart', 'Share how you feel 5 times',
             'Feelings are welcome here.', 'b_honest', _sharedFeelings >= 5),
         PrayerBadge('Closer Than Close', 'Say you feel Very close to God',
@@ -540,8 +543,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// How many apps are locked (Android list, or iPhone picker choice).
+  int get lockedCount => Platform.isIOS ? iosChosen : lockedApps.length;
+
+  /// iPhone: remember how many things the user picked in Apple's picker.
+  Future<void> setIosChosen(int n) async {
+    iosChosen = n;
+    await _p.setInt('iosChosen', n);
+    _checkBadges();
+    notifyListeners();
+  }
+
   Future<void> _sync() => BlockerService.update(
         packages: blockingOn ? lockedApps : [],
         unlockedUntil: unlockedUntil,
+        enabled: blockingOn,
       );
 }

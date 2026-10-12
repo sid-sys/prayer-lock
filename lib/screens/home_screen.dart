@@ -119,7 +119,7 @@ class HomeScreen extends StatelessWidget {
                 Text(
                     s.isUnlocked
                         ? 'Locks again in ${_left(s.unlockedUntil!)}'
-                        : '${s.lockedApps.length} apps wait for your prayer',
+                        : '${s.lockedCount} apps wait for your prayer',
                     style: h(14, color: AppColors.ink, w: FontWeight.w500)),
               ]),
             ),

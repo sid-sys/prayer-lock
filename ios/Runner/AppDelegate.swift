@@ -12,5 +12,9 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    // Screen Time (app locking) bridge.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "ScreenTimePlugin") {
+      ScreenTimePlugin.register(with: registrar)
+    }
   }
 }
