@@ -72,9 +72,9 @@ class _PaywallState extends State<Paywall> {
           child: SafeArea(
             child: LayoutBuilder(
               builder: (context, box) => SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+                padding: const EdgeInsets.fromLTRB(22, 16, 22, 4),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: box.maxHeight - 32),
+                  constraints: BoxConstraints(minHeight: box.maxHeight - 20),
                   // On a tall phone the extra space is shared around the timeline,
                   // so the page has no empty block at the bottom.
                   child: IntrinsicHeight(

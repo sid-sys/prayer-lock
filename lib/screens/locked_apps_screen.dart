@@ -120,8 +120,19 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
     Color(0xFFE1306C), Color(0xFF111111), Color(0xFFFF0033), Color(0xFF25D366),
     Color(0xFF1877F2), Color(0xFF1DA1F2), Color(0xFFFFB800), Color(0xFFE50914),
   ];
-  static Color _tileColor(String name) =>
-      _tileColors[name.codeUnits.fold<int>(0, (a, b) => a + b) % _tileColors.length];
+  static const _brand = {
+    'instagram': Color(0xFFE1306C), 'tiktok': Color(0xFF111111), 'youtube': Color(0xFFFF0033),
+    'whatsapp': Color(0xFF25D366), 'facebook': Color(0xFF1877F2), 'x': Color(0xFF111111),
+    'snapchat': Color(0xFFFFB800), 'netflix': Color(0xFFE50914), 'reddit': Color(0xFFFF4500),
+    'pinterest': Color(0xFFE60023), 'spotify': Color(0xFF1DB954), 'amazon': Color(0xFFFF9900),
+  };
+  static Color _tileColor(String name) {
+    final n = name.toLowerCase();
+    for (final e in _brand.entries) {
+      if (n == e.key || n.startsWith('${e.key} ')) return e.value;
+    }
+    return _tileColors[name.codeUnits.fold<int>(0, (a, b) => a + b) % _tileColors.length];
+  }
 
   Widget _tile(AppInfo a, bool locked) {
     // While flipping, show the new state in the old place.
