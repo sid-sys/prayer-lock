@@ -138,6 +138,50 @@ class BlockerService {
         'websites': (m?['websites'] as num?)?.toInt() ?? 0,
       };
 
+  // ---- Android: time spent per app ("usage access") ----
+
+  static Future<bool> hasUsageAccess() async {
+    try {
+      return await _ch.invokeMethod<bool>('hasUsageAccess') ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<void> requestUsageAccess() async {
+    try {
+      await _ch.invokeMethod('requestUsageAccess');
+    } catch (_) {}
+  }
+
+  /// Minutes per app for each of the last [days] days (only for [packages]).
+  /// Returns {"2026-10-12": {"com.app": 12}}.
+  static Future<Map<String, Map<String, int>>> usageByDay(
+      int days, List<String> packages) async {
+    try {
+      final r = await _ch.invokeMethod<List>('usageByDay', {'days': days, 'packages': packages});
+      final out = <String, Map<String, int>>{};
+      for (final item in r ?? const []) {
+        final m = item as Map;
+        final minutes = <String, int>{};
+        (m['minutes'] as Map? ?? {}).forEach((k, v) => minutes[k as String] = (v as num).toInt());
+        out[m['day'] as String] = minutes;
+      }
+      return out;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  /// Name of an app from its package (uses the loaded app list).
+  static String nameOf(String pkg) {
+    for (final a in loaded ?? const <AppInfo>[]) {
+      if (a.packageName == pkg) return a.name;
+    }
+    final last = pkg.split('.').last;
+    return last.isEmpty ? pkg : last[0].toUpperCase() + last.substring(1);
+  }
+
   static Future<bool> hasPermission() async {
     try {
       return await _ch.invokeMethod<bool>('hasPermission') ?? false;

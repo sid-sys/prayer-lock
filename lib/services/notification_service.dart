@@ -124,6 +124,53 @@ class NotificationService {
     }
   }
 
+  static const _comebackId = 104;
+  static const _comebackLateId = 105;
+
+  /// Gentle "come back" messages if the person has not opened Prayer Lock
+  /// for 3 days (and once more after 6 days). Every time the app is opened,
+  /// this is scheduled again from that moment, so it only ever fires after
+  /// real inactivity. Nothing is sent if reminders are off.
+  static Future<void> scheduleComeback({
+    required bool enabled,
+    required DateTime lastActive,
+  }) async {
+    await init();
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: _comebackId);
+      await _plugin.cancel(id: _comebackLateId);
+      if (!enabled) return;
+
+      tz.TZDateTime at(int days) {
+        final d = lastActive.add(Duration(days: days));
+        var t = tz.TZDateTime(tz.local, d.year, d.month, d.day, 18, 0);
+        final now = tz.TZDateTime.now(tz.local);
+        if (!t.isAfter(now)) t = now.add(const Duration(minutes: 5));
+        return t;
+      }
+
+      await _plugin.zonedSchedule(
+        id: _comebackId,
+        scheduledDate: at(3),
+        notificationDetails: _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        title: "🙏 There's always time to come back to God",
+        body: "It's been a little while. Take a quiet moment with Jesus today. You can always begin again 💛",
+      );
+      await _plugin.zonedSchedule(
+        id: _comebackLateId,
+        scheduledDate: at(6),
+        notificationDetails: _details,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        title: '🕊️ Your prayer time is still here',
+        body: 'No pressure, no guilt. Open Prayer Lock whenever you are ready 🌅',
+      );
+    } catch (e) {
+      debugPrint('Comeback schedule failed: $e');
+    }
+  }
+
   /// Short celebration shown right after a prayer.
   static Future<void> celebrate(int streak) async {
     await init();

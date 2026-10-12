@@ -34,6 +34,8 @@ const _privacy = <_Section>[
       'Prayer Lock uses the Android Accessibility service for one purpose: to notice when you open an app that YOU chose to lock, so we can show the prayer screen first. It does not read what is on your screen, does not read text you type or passwords, and does not collect or share any data from other apps.'),
   _Section('iPhone: Screen Time',
       'On iPhone, app locking uses Apple\'s Screen Time (Family Controls) tools. Which apps you pick stays on your device and is not readable by us.'),
+  _Section('Your progress report',
+      'Prayer Lock counts how often it paused you before a locked app, how you ended each pause, and your prayers. These counts stay on your phone. On Android, if you turn on "usage access", Prayer Lock also reads how long you spend in the apps you chose to lock, so it can show your time and a before-and-after comparison. We do not send this to our servers, and we never read what is on your screen. Time "reclaimed" is an estimate, not a measurement. You can delete this history any time in Insights, and you can turn usage access off in your phone settings. On iPhone, Apple does not share per-app time with apps, so we do not collect it.'),
   _Section('Notifications',
       'We send morning and night prayer reminders at the times you choose. Notifications never show your prayers or feelings. You can turn them off in Profile.'),
   _Section('Who we share data with',

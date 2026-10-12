@@ -28,6 +28,19 @@ class PrayerEntry {
           kind: j['k'] ?? 'gate', prayer: j['p'] as String?);
 }
 
+/// One thing that happened (for the progress report). Kept on the phone only.
+/// Types: gate_shown, gate_prayed, gate_abandoned, gate_continue.
+class ActivityEvent {
+  final DateTime at;
+  final String type;
+  final String? pkg;
+  ActivityEvent(this.at, this.type, [this.pkg]);
+
+  Map<String, dynamic> toJson() => {'t': at.millisecondsSinceEpoch, 'y': type, if (pkg != null) 'p': pkg};
+  factory ActivityEvent.fromJson(Map<String, dynamic> j) => ActivityEvent(
+      DateTime.fromMillisecondsSinceEpoch(j['t'] as int), j['y'] as String, j['p'] as String?);
+}
+
 class PrayerBadge {
   final String title;
   final String how; // how to earn it
@@ -47,6 +60,10 @@ class AppState extends ChangeNotifier {
   bool loaded = false;
 
   bool onboarded = false;
+  List<ActivityEvent> events = [];
+  DateTime? lastActiveAt;
+  Map<String, Map<String, int>> usageDaily = {}; // day -> app -> minutes
+  bool hasUsageAccess = false;
   int iosChosen = 0; // iPhone: apps + categories + websites chosen in Apple's picker
   Set<String> seenBadges = {}; // badges already celebrated
   final List<PrayerBadge> _badgeQueue = [];
@@ -77,6 +94,23 @@ class AppState extends ChangeNotifier {
     trialStart = t == null ? null : DateTime.tryParse(t);
     plan = _p.getString('plan') ?? 'yearly';
     iosChosen = _p.getInt('iosChosen') ?? 0;
+    final ev = _p.getString('events');
+    if (ev != null) {
+      try {
+        events = (jsonDecode(ev) as List)
+            .map((e) => ActivityEvent.fromJson(Map<String, dynamic>.from(e as Map)))
+            .toList();
+      } catch (_) {}
+    }
+    final la = _p.getString('lastActiveAt');
+    lastActiveAt = la == null ? null : DateTime.tryParse(la);
+    final ud = _p.getString('usageDaily');
+    if (ud != null) {
+      try {
+        usageDaily = (jsonDecode(ud) as Map).map((k, v) =>
+            MapEntry(k as String, (v as Map).map((a, b) => MapEntry(a as String, (b as num).toInt()))));
+      } catch (_) {}
+    }
     committed = _p.getBool('committed') ?? false;
     paywallViews = _p.getInt('paywallViews') ?? 0;
     paymentAttempts = _p.getInt('paymentAttempts') ?? 0;
@@ -270,6 +304,24 @@ class AppState extends ChangeNotifier {
       }
     }
     history.removeWhere((e) => e.date.isAfter(now));
+    events = [
+      for (var i = 0; i < 32; i++)
+        ActivityEvent(now.subtract(Duration(hours: 3 + i * 5)), 'gate_shown', 'com.instagram.android'),
+      for (var i = 0; i < 14; i++)
+        ActivityEvent(now.subtract(Duration(hours: 4 + i * 11)), 'gate_abandoned', 'com.instagram.android'),
+      for (var i = 0; i < 12; i++)
+        ActivityEvent(now.subtract(Duration(hours: 5 + i * 13)), 'gate_prayed', 'com.instagram.android'),
+    ];
+    usageDaily = {
+      for (var i = 0; i < 14; i++)
+        '${now.subtract(Duration(days: i)).year}-${now.subtract(Duration(days: i)).month.toString().padLeft(2, '0')}-${now.subtract(Duration(days: i)).day.toString().padLeft(2, '0')}': {
+          'com.instagram.android': i >= 7 ? 62 : 46,
+          'com.zhiliaoapp.musically': i >= 7 ? 38 : 27,
+          'com.google.android.youtube': i >= 7 ? 31 : 23,
+          'com.whatsapp.w4b': i >= 7 ? 20 : 15,
+        },
+    };
+    hasUsageAccess = true;
     lockedApps = ['com.instagram.android', 'com.zhiliaoapp.musically', 'com.google.android.youtube',
       'com.whatsapp.w4b', 'com.facebook.katana'];
   }
@@ -320,12 +372,124 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> rescheduleReminders() => NotificationService.schedule(
-        enabled: remindersOn,
-        morningMin: morningMin,
-        nightMin: nightMin,
-        streak: streak,
-      );
+  Future<void> rescheduleReminders() async {
+    await NotificationService.schedule(
+      enabled: remindersOn,
+      morningMin: morningMin,
+      nightMin: nightMin,
+      streak: streak,
+    );
+    await NotificationService.scheduleComeback(
+      enabled: remindersOn,
+      lastActive: lastActiveAt ?? DateTime.now(),
+    );
+  }
+
+  // ---------- activity for the progress report ----------
+
+  /// The person opened Prayer Lock (or did something in it). Starts the
+  /// 3-day "come back" clock again.
+  Future<void> touch() async {
+    lastActiveAt = DateTime.now();
+    await _p.setString('lastActiveAt', lastActiveAt!.toIso8601String());
+    if (onboarded && entitled) await rescheduleReminders();
+  }
+
+  void logEvent(String type, [String? pkg]) {
+    events.add(ActivityEvent(DateTime.now(), type, pkg));
+    final cutoff = DateTime.now().subtract(const Duration(days: 90));
+    events.removeWhere((e) => e.at.isBefore(cutoff));
+    if (events.length > 2000) events = events.sublist(events.length - 2000);
+    _p.setString('events', jsonEncode(events.map((e) => e.toJson()).toList()));
+    notifyListeners();
+  }
+
+  int countEvents(String type, {int days = 7}) {
+    final cutoff = DateTime.now().subtract(Duration(days: days));
+    return events.where((e) => e.type == type && e.at.isAfter(cutoff)).length;
+  }
+
+  /// How many times the pause screen appeared when a locked app was opened.
+  int get pausesThisWeek => countEvents('gate_shown');
+
+  /// Prayers completed in the last 7 days (measured).
+  int get prayersThisWeek {
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return history.where((e) => e.date.isAfter(cutoff)).length;
+  }
+
+  /// We assume a skipped session would have lasted about this long.
+  /// It is an ESTIMATE, not something we measure.
+  static const assumedSessionMinutes = 8;
+
+  /// Sessions the person walked away from after the pause (they did not go on).
+  int get skippedSessionsThisWeek => countEvents('gate_abandoned');
+
+  /// Estimated minutes potentially reclaimed this week. The time spent praying
+  /// is NOT counted.
+  int get reclaimedMinutesThisWeek => skippedSessionsThisWeek * assumedSessionMinutes;
+
+  /// Android: read time-per-app from the phone and keep one number per day.
+  Future<void> refreshUsage() async {
+    hasUsageAccess = await BlockerService.hasUsageAccess();
+    if (hasUsageAccess && lockedApps.isNotEmpty) {
+      final fresh = await BlockerService.usageByDay(14, lockedApps);
+      usageDaily.addAll(fresh);
+      final keep = usageDaily.keys.toList()..sort();
+      while (keep.length > 60) {
+        usageDaily.remove(keep.removeAt(0));
+      }
+      await _p.setString('usageDaily', jsonEncode(usageDaily));
+    }
+    notifyListeners();
+  }
+
+  List<String> get _usageDays => usageDaily.keys.toList()..sort();
+
+  int _dayTotal(String day) {
+    final m = usageDaily[day];
+    if (m == null) return 0;
+    var t = 0;
+    for (final e in m.entries) {
+      if (lockedApps.contains(e.key) || lockedApps.isEmpty) t += e.value;
+    }
+    return t;
+  }
+
+  /// Minutes per locked app over the last 7 days, biggest first.
+  List<MapEntry<String, int>> usageWeekByApp() {
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    final totals = <String, int>{};
+    usageDaily.forEach((day, apps) {
+      final d = DateTime.tryParse(day);
+      if (d == null || d.isBefore(DateTime(cutoff.year, cutoff.month, cutoff.day))) return;
+      apps.forEach((pkg, min) {
+        if (lockedApps.isEmpty || lockedApps.contains(pkg)) totals[pkg] = (totals[pkg] ?? 0) + min;
+      });
+    });
+    return totals.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+  }
+
+  /// First 7 recorded days vs the latest 7 (average minutes per day), or null
+  /// if we do not have enough days yet. A MEASURED comparison, not proof of cause.
+  ({double before, double now, int days})? get usageComparison {
+    final days = _usageDays;
+    if (days.length < 10) return null;
+    double avg(List<String> d) => d.map(_dayTotal).fold<int>(0, (a, b) => a + b) / d.length;
+    return (before: avg(days.take(7).toList()), now: avg(days.skip(days.length - 7).toList()), days: days.length);
+  }
+
+  /// Days of usage we have so far (to show "collecting your baseline").
+  int get usageDaysRecorded => usageDaily.length;
+
+  /// Forget all activity numbers (the person asked for it).
+  Future<void> clearActivity() async {
+    events = [];
+    usageDaily = {};
+    await _p.remove('events');
+    await _p.remove('usageDaily');
+    notifyListeners();
+  }
 
   bool doneToday(String kind) {
     final n = DateTime.now();

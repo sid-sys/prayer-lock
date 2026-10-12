@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/mood_face.dart';
+import '../widgets/progress_report.dart';
 
 class InsightsScreen extends StatelessWidget {
   const InsightsScreen({super.key});
@@ -43,7 +44,13 @@ class InsightsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Center(child: Text(name, style: h(20))),
-        const SizedBox(height: 16),
+        const SizedBox(height: 18),
+
+        // Digital wellbeing and spiritual growth
+        const ProgressReport(),
+        const SizedBox(height: 22),
+        Text('Closeness to God', style: h(20)),
+        const SizedBox(height: 10),
 
         // Vertical mood bars, like the reference.
         Container(

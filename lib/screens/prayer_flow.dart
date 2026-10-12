@@ -28,6 +28,8 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
   late final AnimationController _ring = AnimationController(
       vsync: this, duration: const Duration(seconds: _prayerSeconds));
 
+  bool _completed = false;
+  late final AppState _app = context.read<AppState>();
   _Step _step = _Step.mood;
   double _mood = 0.6;
   String _feeling = '';
@@ -55,6 +57,8 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
 
   @override
   void dispose() {
+    // Left before praying: the person walked away from the locked app.
+    if (widget.openAfter != null && !_completed) _app.logEvent('gate_abandoned', widget.openAfter);
     _ring.dispose();
     super.dispose();
   }
@@ -66,6 +70,8 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
         PrayerEntry(DateTime.now(), _rel, _feeling.isEmpty ? 'Private' : _feeling,
             kind: widget.kind, prayer: _prayer),
         _minutes);
+    _completed = true;
+    if (widget.openAfter != null) s.logEvent('gate_prayed', widget.openAfter);
     NotificationService.celebrate(s.streak);
     if (mounted) setState(() => _step = _Step.done);
   }
@@ -356,7 +362,10 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
             onPressed: () {
               Navigator.pop(context);
               final pkg = widget.openAfter;
-              if (pkg != null) BlockerService.launchApp(pkg);
+              if (pkg != null) {
+                _app.logEvent('gate_continue', pkg);
+                BlockerService.launchApp(pkg);
+              }
             },
             child: Text(widget.openAfter == 'ios'
                 ? 'Amen. Go to your app 🙌'

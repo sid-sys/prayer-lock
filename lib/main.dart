@@ -87,16 +87,31 @@ class PrayerLockApp extends StatefulWidget {
   State<PrayerLockApp> createState() => _PrayerLockAppState();
 }
 
-class _PrayerLockAppState extends State<PrayerLockApp> {
+class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserver {
   bool _flowOpen = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // A locked app was opened: show the prayer first.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       BlockerService.listenBlocked(_onBlocked);
+      context.read<AppState>().touch(); // the 3-day comeback clock starts again
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      context.read<AppState>().touch();
+    }
   }
 
   void _onBlocked(String pkg) {
@@ -107,6 +122,7 @@ class _PrayerLockAppState extends State<PrayerLockApp> {
     final s = context.read<AppState>();
     if (!s.onboarded || !s.entitled) return;
     _flowOpen = true;
+    s.logEvent('gate_shown', pkg); // a locked app was opened and we paused it
     nav
         .push(MaterialPageRoute(
             builder: (_) => PrayerFlow(kind: 'gate', openAfter: pkg)))
