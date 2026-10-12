@@ -13,15 +13,19 @@ To send the app to friends with TestFlight, or to the App Store, Apple must appr
 4. Optional but helpful: a **30 to 60 second video** that shows the idea (the flow in the app).
    Apple sometimes asks for it.
 
-## Where to send it
+## Where to send it (checked in Apple's docs on 12 Oct 2026)
 
-Open the Apple Developer website, sign in, and look for **Contact Us > Capability Requests**
-(or search "Family Controls distribution entitlement request").
-The form page is usually: https://developer.apple.com/contact/request/family-controls-distribution
-(If this link has moved, use the search above.)
+Use Apple's request form. Do NOT use the Contact Us email route.
 
-If there is no form, email Apple Developer Support from your Developer account page
-(Contact Us > Membership and Account) and paste the text below.
+https://developer.apple.com/contact/request/family-controls-distribution
+
+Apple's page "Configuring Family Controls" says: "To distribute your app, you need an entitlement that
+enables distribution. When you submit your app to TestFlight and the App Store, request permission to
+use the Family Controls entitlement... If your app includes a Screen Time API app extension, submit the
+same request for the extension." Its entitlement reference page links to the form above ("request permission").
+
+The same page also says the development version is available through the Apple Developer Program, so you
+can test on your own iPhone without approval. The macOS App Sandbox page is for Mac apps and does not apply.
 
 ## Names to use
 
