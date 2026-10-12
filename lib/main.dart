@@ -57,7 +57,7 @@ Widget _shotScreen() {
     case 'commit':
       return const CommitScreen();
     case 'commit_hold':
-      return const CommitScreen(demoProgress: 0.5);
+      return const CommitScreen(demoProgress: 0.8);
     case 'badges':
       return const StreakScreen(scrollTo: 640);
     case 'paywall':
