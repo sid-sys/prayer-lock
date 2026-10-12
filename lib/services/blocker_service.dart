@@ -1,5 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:installed_apps/installed_apps.dart';
+import '../config.dart';
 
 /// Talks to native code that blocks apps.
 /// Android: Accessibility service (see BlockerAccessibilityService.kt).
@@ -20,7 +21,40 @@ class BlockerService {
   static Future<List<AppInfo>> installedApps() =>
       _loading ??= _load().then((a) => loaded = a);
 
+  static List<AppInfo> _sampleApps() {
+    const names = {
+      'com.instagram.android': 'Instagram',
+      'com.zhiliaoapp.musically': 'TikTok',
+      'com.google.android.youtube': 'YouTube',
+      'com.whatsapp.w4b': 'WhatsApp Business',
+      'com.facebook.katana': 'Facebook',
+      'com.twitter.android': 'X',
+      'com.snapchat.android': 'Snapchat',
+      'com.netflix.mediaclient': 'Netflix',
+      'com.reddit.frontpage': 'Reddit',
+      'com.pinterest': 'Pinterest',
+      'com.spotify.music': 'Spotify',
+      'com.amazon.mShop': 'Amazon Shopping',
+    };
+    return [
+      for (final e in names.entries)
+        AppInfo(
+          name: e.value,
+          icon: null,
+          packageName: e.key,
+          versionName: '1.0',
+          versionCode: 1,
+          platformType: PlatformType.nativeOrOthers,
+          installedTimestamp: 0,
+          isSystemApp: false,
+          isLaunchableApp: true,
+          category: AppCategory.undefined,
+        ),
+    ];
+  }
+
   static Future<List<AppInfo>> _load() async {
+    if (kShotMode) return _sampleApps(); // screenshots on a simulator
     try {
       final apps = await InstalledApps.getInstalledApps(
         excludeSystemApps: true,

@@ -56,6 +56,10 @@ Widget _shotScreen() {
       return const Onboarding(startAt: 6);
     case 'commit':
       return const CommitScreen();
+    case 'commit_hold':
+      return const CommitScreen(demoProgress: 0.5);
+    case 'badges':
+      return const StreakScreen(scrollTo: 640);
     case 'paywall':
       return const Paywall();
     case 'prayer':

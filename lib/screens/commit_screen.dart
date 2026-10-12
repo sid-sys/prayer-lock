@@ -8,7 +8,9 @@ import '../theme.dart';
 /// Shown right before the paywall. Hold the fingerprint button: black spreads
 /// from the button and flips every color on the screen (white <-> black).
 class CommitScreen extends StatefulWidget {
-  const CommitScreen({super.key});
+  /// Freeze the hold at this value 0..1 (used by screenshot mode).
+  final double? demoProgress;
+  const CommitScreen({super.key, this.demoProgress});
   @override
   State<CommitScreen> createState() => _CommitScreenState();
 }
@@ -33,6 +35,7 @@ class _CommitScreenState extends State<CommitScreen> with TickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    if (widget.demoProgress != null) _hold.value = widget.demoProgress!;
     _hold.addListener(() {
       // a small tap feeling every quarter of the way
       final tick = (_hold.value * 8).floor();

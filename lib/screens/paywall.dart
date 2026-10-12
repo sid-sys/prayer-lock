@@ -70,8 +70,16 @@ class _PaywallState extends State<Paywall> {
         body: AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle.dark,
           child: SafeArea(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+            child: LayoutBuilder(
+              builder: (context, box) => SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: box.maxHeight - 32),
+                  // On a tall phone the extra space is shared around the timeline,
+                  // so the page has no empty block at the bottom.
+                  child: IntrinsicHeight(
+                    child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
                     _lifetime
@@ -79,7 +87,7 @@ class _PaywallState extends State<Paywall> {
                         : 'Start your 7-day FREE trial to continue 🙏',
                     textAlign: TextAlign.center,
                     style: h(27, color: Colors.black)),
-                const SizedBox(height: 18),
+                const Spacer(flex: 2),
 
                 // Timeline (kept compact so it is always visible)
                 AnimatedSwitcher(
@@ -110,7 +118,7 @@ class _PaywallState extends State<Paywall> {
                           ],
                         ),
                 ),
-                const SizedBox(height: 16),
+                const Spacer(flex: 3),
 
                 // Plans (compact)
                 _planCard(
@@ -179,12 +187,16 @@ class _PaywallState extends State<Paywall> {
                     _link('Terms', () => _legal(LegalDoc.terms)),
                     _link('Privacy', () => _legal(LegalDoc.privacy)),
                     _link('Restore', _restore),
-                    if (kMockBuild)
+                    if (kMockBuild && !kShotMode)
                       _link('Skip (test)', () => context.read<AppState>().testSkipPaywall(),
                           color: const Color(0xFFE53935)),
                   ],
                 ),
               ],
+            ),
+                  ),
+                ),
+              ),
             ),
           ),
         ),

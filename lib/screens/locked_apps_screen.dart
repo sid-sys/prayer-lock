@@ -116,6 +116,13 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
     );
   }
 
+  static const _tileColors = [
+    Color(0xFFE1306C), Color(0xFF111111), Color(0xFFFF0033), Color(0xFF25D366),
+    Color(0xFF1877F2), Color(0xFF1DA1F2), Color(0xFFFFB800), Color(0xFFE50914),
+  ];
+  static Color _tileColor(String name) =>
+      _tileColors[name.codeUnits.fold<int>(0, (a, b) => a + b) % _tileColors.length];
+
   Widget _tile(AppInfo a, bool locked) {
     // While flipping, show the new state in the old place.
     final shown = _flipping.contains(a.packageName) ? !locked : locked;
@@ -151,7 +158,17 @@ class _LockedAppsScreenState extends State<LockedAppsScreen> {
               child: Row(
                 children: [
                   a.icon == null
-                      ? const Icon(Icons.apps, size: 40)
+                      ? Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: _tileColor(a.name),
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Text(a.name.characters.first.toUpperCase(),
+                              style: h(20, color: Colors.white)),
+                        )
                       : Image.memory(a.icon!, width: 40, height: 40, gaplessPlayback: true),
                   const SizedBox(width: 14),
                   Expanded(

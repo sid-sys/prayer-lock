@@ -7,7 +7,9 @@ import '../widgets/streak_cards.dart';
 import 'prayer_flow.dart';
 
 class StreakScreen extends StatelessWidget {
-  const StreakScreen({super.key});
+  /// Start scrolled down by this much (used by screenshot mode).
+  final double? scrollTo;
+  const StreakScreen({super.key, this.scrollTo});
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +24,7 @@ class StreakScreen extends StatelessWidget {
       body: SafeArea(
         top: false,
         child: ListView(
+          controller: scrollTo == null ? null : ScrollController(initialScrollOffset: scrollTo!),
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
           children: [
             const Center(child: AnimatedFire(size: 110)),

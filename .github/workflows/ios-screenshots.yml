@@ -84,10 +84,13 @@ jobs:
           shoot onboarding_3
           shoot onboarding_6
           shoot commit
+          shoot commit_hold
           shoot paywall
           shoot home
           shoot prayer
           shoot streak
+          shoot badges
+          shoot locked
           shoot insights
           shoot profile
           shoot plan
