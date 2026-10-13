@@ -106,4 +106,5 @@ jobs:
           path: |
             ${{ runner.temp }}/archive.log
             ${{ runner.temp }}/export.log
+          retention-days: 2
           if-no-files-found: ignore
