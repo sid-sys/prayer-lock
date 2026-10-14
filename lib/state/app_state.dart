@@ -392,6 +392,9 @@ class AppState extends ChangeNotifier {
   Future<void> touch() async {
     lastActiveAt = DateTime.now();
     await _p.setString('lastActiveAt', lastActiveAt!.toIso8601String());
+    // Make the phone match the saved state (for example, put the lock back
+    // if the open time has ended).
+    if (onboarded) await _sync();
     if (onboarded && entitled) await rescheduleReminders();
   }
 
@@ -515,6 +518,9 @@ class AppState extends ChangeNotifier {
 
   bool get isUnlocked =>
       unlockedUntil != null && unlockedUntil!.isAfter(DateTime.now());
+
+  /// Re-send the lock state to the phone (used after choosing apps on iPhone).
+  Future<void> relock() => _sync();
 
   /// Put the lock back on right away (end the open window early).
   Future<void> lockNow() async {

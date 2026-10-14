@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/blocker_service.dart';
+import '../services/notification_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 
@@ -15,6 +16,7 @@ class IosLockedApps extends StatefulWidget {
 
 class _IosLockedAppsState extends State<IosLockedApps> with WidgetsBindingObserver {
   bool _allowed = false;
+  bool _notifOk = true;
   bool _busy = false;
   Map<String, int> _counts = {'apps': 0, 'categories': 0, 'websites': 0};
 
@@ -39,10 +41,12 @@ class _IosLockedAppsState extends State<IosLockedApps> with WidgetsBindingObserv
   Future<void> _refresh() async {
     final ok = await BlockerService.hasPermission();
     final c = await BlockerService.summary();
+    final n = await NotificationService.areEnabled();
     if (!mounted) return;
     setState(() {
       _allowed = ok;
       _counts = c;
+      _notifOk = n;
     });
   }
 
@@ -58,12 +62,17 @@ class _IosLockedAppsState extends State<IosLockedApps> with WidgetsBindingObserv
     final c = await BlockerService.pickApps();
     if (!mounted) return;
     final total = c.values.fold<int>(0, (a, b) => a + b);
-    await context.read<AppState>().setIosChosen(total);
+    final state = context.read<AppState>();
+    await state.setIosChosen(total);
+    // Make sure the lock is really on for the new choice.
+    await state.relock();
+    // "Pray now" on the lock screen works through a notification, so ask for it here too.
+    if (total > 0 && !await NotificationService.areEnabled()) {
+      await NotificationService.askPermission();
+    }
+    await _refresh();
     if (!mounted) return;
-    setState(() {
-      _counts = c;
-      _busy = false;
-    });
+    setState(() => _busy = false);
   }
 
   String get _summary {
@@ -78,6 +87,68 @@ class _IosLockedAppsState extends State<IosLockedApps> with WidgetsBindingObserv
     ];
     return '${parts.join(', ')} locked';
   }
+
+  Widget _row(String label, bool ok, String good, String bad) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(children: [
+          Text(ok ? '✅' : '⚠️', style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(label, style: h(14, w: FontWeight.w600))),
+          Text(ok ? good : bad,
+              style: h(13, color: ok ? AppColors.soft : const Color(0xFFD84315), w: FontWeight.w700)),
+        ]),
+      );
+
+  /// Shows what is on or off, so a problem is easy to see.
+  Widget _statusCard(BuildContext context) {
+    final s = context.watch<AppState>();
+    final chosen = (_counts.values.fold<int>(0, (a, b) => a + b)) > 0;
+    final open = s.isUnlocked;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Status', style: h(16)),
+          const SizedBox(height: 6),
+          _row('Screen Time access', _allowed, 'Allowed', 'Not allowed'),
+          _row('Apps chosen', chosen, '$_totalChosen', 'None'),
+          _row('Notifications', _notifOk, 'On', 'Off: needed for "Pray now"'),
+          _row('Lock', !open && s.blockingOn, 'On', open ? 'Open for now' : 'Switched off'),
+          if (!_notifOk)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: OutlinedButton(
+                onPressed: () async {
+                  await NotificationService.askPermission();
+                  await _refresh();
+                },
+                child: const Text('Allow notifications'),
+              ),
+            ),
+          if (open && chosen)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: FilledButton(
+                onPressed: () async {
+                  await s.lockNow();
+                  await _refresh();
+                },
+                child: const Text('Lock my apps now 🔒'),
+              ),
+            ),
+          if (!open && s.blockingOn && chosen && _allowed)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(
+                  'Open one of your chosen apps. A "Pray first" screen should cover it. Tap "Pray now", then tap the notification.',
+                  style: h(12, color: AppColors.soft, w: FontWeight.w500).copyWith(height: 1.4)),
+            ),
+        ]),
+      ),
+    );
+  }
+
+  int get _totalChosen => _counts.values.fold<int>(0, (a, b) => a + b);
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +176,9 @@ class _IosLockedAppsState extends State<IosLockedApps> with WidgetsBindingObserv
             ),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
+        _statusCard(context),
+        const SizedBox(height: 12),
         if (!_allowed) ...[
           Card(
             child: Padding(
