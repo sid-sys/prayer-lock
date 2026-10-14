@@ -46,10 +46,10 @@ class _PaywallState extends State<Paywall> {
   }
 
   Future<void> _restore() async {
-    final ok = await PurchaseService.restore();
+    final found = await PurchaseService.restore();
     if (!mounted) return;
-    if (ok) {
-      await context.read<AppState>().startTrial(_plan);
+    if (found != null) {
+      await context.read<AppState>().startTrial(found);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('No purchase found to restore.')));
