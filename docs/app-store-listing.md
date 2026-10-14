@@ -5,18 +5,18 @@
 | Field | Text | Letters (max 30) |
 |---|---|---|
 | App name | **Prayer Lock: Christian Focus** | 28 |
-| Subtitle | **Jesus, Bible & Screen Time** | 26 |
+| Subtitle | **Block Apps, Pray with Jesus** | 27 |
 | Name under the app icon | Prayer Lock | 11 |
 
 If App Store Connect says the name is taken, use `Pray First: Prayer Lock` as the backup.
 
-## Keyword box (100 characters allowed, 99 used)
+## Keyword box (100 characters allowed, 98 used)
 
 Paste with no spaces after the commas. Words already in the name or subtitle are left out on purpose,
-because Apple indexes those too (prayer, lock, christian, focus, jesus, bible, screen, time).
+because Apple indexes those too (prayer, lock, christian, focus, block, apps, pray, with, jesus).
 
 ```
-pray,app blocker,devotional,scripture,verse,streak,morning,night,habit,quiet,faith,church,block,god
+bible,screen time,app blocker,devotional,scripture,verse,streak,morning,night,habit,god,faith,church
 ```
 
 ## Other places that help ranking
@@ -30,3 +30,12 @@ pray,app blocker,devotional,scripture,verse,streak,morning,night,habit,quiet,fai
 
 - Real search popularity is not known from here. Check "christian", "jesus" and "bible" in a free keyword tool.
 - Do not claim features the app does not have. iPhone app locking needs the Family Controls approval (granted) and a real device test.
+
+## IDs (cannot change after publishing)
+
+- iPhone bundle ID: `com.coreinteractive.prayerLock`
+- Android package ID: `com.coreinteractive.prayer_lock`
+- Apple Team ID: `W3QA63P2YL`
+- App Group: `group.com.coreinteractive.prayerLock`
+
+Name, subtitle and keywords CAN be changed later with a new app version.
