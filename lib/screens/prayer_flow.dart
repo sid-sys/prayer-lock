@@ -357,7 +357,19 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
           Text('Rest peacefully. You are not alone 💛',
               style: h(16, color: AppColors.soft, w: FontWeight.w500)),
         ],
-        const SizedBox(height: 36),
+        if (widget.openAfter == 'ios') ...[
+          // Apple does not let an app open another app. So we say it clearly.
+          const SizedBox(height: 22),
+          PastelCard(
+            color: Colors.white,
+            padding: const EdgeInsets.all(14),
+            child: Text(
+                'Your apps are open now. Go back to the app you wanted: tap the app switcher (swipe up from the bottom and hold), or press Home and open it. Apple does not let Prayer Lock open it for you.',
+                textAlign: TextAlign.center,
+                style: h(14, color: AppColors.ink, w: FontWeight.w600)),
+          ),
+        ],
+        const SizedBox(height: 28),
         FilledButton(
             onPressed: () {
               Navigator.pop(context);
@@ -368,7 +380,7 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
               }
             },
             child: Text(widget.openAfter == 'ios'
-                ? 'Amen. Go to your app 🙌'
+                ? 'Amen. I will go back to my app 🙌'
                 : widget.openAfter != null
                     ? 'Amen. Open my app 🙌'
                     : 'Amen 🙌')),

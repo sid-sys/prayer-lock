@@ -16,6 +16,9 @@ import 'screens/prayer_flow.dart';
 import 'screens/onboarding.dart';
 import 'screens/paywall.dart';
 import 'screens/shell.dart';
+import 'screens/splash.dart';
+import 'screens/trial_reminder.dart';
+import 'services/review_service.dart';
 import 'services/blocker_service.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
@@ -50,10 +53,20 @@ Widget _shotScreen() {
       return const Onboarding(startAt: 0);
     case 'onboarding_1':
       return const Onboarding(startAt: 1);
+    case 'onboarding_2':
+      return const Onboarding(startAt: 2);
     case 'onboarding_3':
       return const Onboarding(startAt: 3);
-    case 'onboarding_6':
-      return const Onboarding(startAt: 6);
+    case 'onboarding_4':
+      return const Onboarding(startAt: 4);
+    case 'onboarding_7':
+      return const Onboarding(startAt: 7);
+    case 'onboarding_9':
+      return const Onboarding(startAt: 9);
+    case 'reminder':
+      return const TrialReminderScreen();
+    case 'splash':
+      return const SplashScreen();
     case 'commit':
       return const CommitScreen();
     case 'commit_hold':
@@ -98,6 +111,7 @@ class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserv
     WidgetsBinding.instance.addPostFrameCallback((_) {
       BlockerService.listenBlocked(_onBlocked);
       context.read<AppState>().touch(); // the 3-day comeback clock starts again
+      _maybeAskReview();
     });
   }
 
@@ -111,7 +125,20 @@ class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserv
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       context.read<AppState>().touch();
+      _maybeAskReview();
     }
+  }
+
+  /// Once a week, until the person has rated, ask for a rating.
+  /// Only for people who are inside the app (signed in and past the paywall).
+  Future<void> _maybeAskReview() async {
+    if (kShotMode) return;
+    await Future<void>.delayed(const Duration(seconds: 4));
+    final ctx = navigatorKey.currentContext;
+    if (ctx == null || !ctx.mounted || _flowOpen) return;
+    final s = ctx.read<AppState>();
+    if (FirebaseAuth.instance.currentUser == null || !s.entitled) return;
+    await ReviewService.maybeAsk(ctx, s);
   }
 
   void _onBlocked(String pkg) {
@@ -156,10 +183,16 @@ class _Gate extends StatefulWidget {
 class _GateState extends State<_Gate> {
   late final Stream<User?> _auth = FirebaseAuth.instance.authStateChanges();
   Timer? _shotTimer;
+  bool _splashDone = kShotMode;
 
   @override
   void initState() {
     super.initState();
+    if (!kShotMode) {
+      Future<void>.delayed(const Duration(milliseconds: 1600), () {
+        if (mounted) setState(() => _splashDone = true);
+      });
+    }
     if (kShotMode) {
       // Screenshot mode: the workflow writes the screen name into a file on
       // the Mac (the simulator can read it). We look at it twice a second.
@@ -184,12 +217,14 @@ class _GateState extends State<_Gate> {
   @override
   Widget build(BuildContext context) {
     if (kShotMode) return KeyedSubtree(key: ValueKey(_shot), child: _shotScreen());
+    if (!_splashDone) return const SplashScreen();
     final onboarded = context.select<AppState, bool>((s) => s.onboarded);
     final entitled = context.select<AppState, bool>((s) => s.entitled);
     final committed = context.select<AppState, bool>((s) => s.committed);
+    final reminderSeen = context.select<AppState, bool>((s) => s.trialReminderSeen);
+    // Order: splash -> onboarding -> commit -> sign up -> paywall -> app.
     if (!onboarded) return const Onboarding();
     if (!committed) return const CommitScreen();
-    if (!entitled) return const Paywall();
     return StreamBuilder<User?>(
       stream: _auth,
       initialData: FirebaseAuth.instance.currentUser,
@@ -197,7 +232,9 @@ class _GateState extends State<_Gate> {
         if (snap.connectionState == ConnectionState.waiting && !snap.hasData) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
-        return snap.hasData ? const Shell() : const AuthScreen();
+        if (!snap.hasData) return const AuthScreen();
+        if (!entitled) return reminderSeen ? const Paywall() : const TrialReminderScreen();
+        return const Shell();
       },
     );
   }

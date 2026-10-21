@@ -87,6 +87,7 @@ class _PaywallState extends State<Paywall> {
                         : 'Start your 7-day FREE trial to continue 🙏',
                     textAlign: TextAlign.center,
                     style: h(27, color: Colors.black)),
+                const SizedBox(height: 18),
                 const Spacer(flex: 2),
 
                 // Timeline (kept compact so it is always visible)
@@ -157,6 +158,7 @@ class _PaywallState extends State<Paywall> {
                 FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: _ink,
+                    textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                     foregroundColor: Colors.white,
                     minimumSize: const Size.fromHeight(56),
                   ),

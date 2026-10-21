@@ -2,9 +2,12 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/blocker_service.dart';
+import '../config.dart';
 import '../services/notification_service.dart';
+import '../services/review_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/bell_pic.dart';
 import '../widgets/fire.dart';
 import '../widgets/mood_face.dart';
 
@@ -17,29 +20,28 @@ class Onboarding extends StatefulWidget {
 }
 
 class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
-  static const _count = 7;
+  // Pages: 0 hook, 1 habit question, 2 chart, 3 solution, 4 one mission,
+  // 5 daily rhythm, 6 goals, 7 where did you hear, 8 distractions, 9 permissions.
+  static const _count = 10;
+  static const _pHeard = 7;
   late int _i = widget.startAt;
   String? _habit;
+  String? _heard;
   final Set<String> _goals = {};
   TimeOfDay _morning = const TimeOfDay(hour: 7, minute: 0);
   TimeOfDay _night = const TimeOfDay(hour: 21, minute: 30);
   bool _blockAll = false;
 
-  // Page colors: pastel screens use dark ink, dark screens use white.
-  static const _bgs = [
-    AppColors.bg,
-    AppColors.bg,
-    AppColors.bg,
-    AppColors.bg,
-    AppColors.bg,
-    AppColors.bg,
-    AppColors.bg,
-  ];
-
   bool get _light => true;
   Color get _fg => _light ? AppColors.ink : Colors.white;
 
-  void _next() {
+  Future<void> _next() async {
+    if (_i == _pHeard && _heard != null) {
+      await context.read<AppState>().setHeardFrom(_heard!);
+      // Ask for a rating once, right after the person told us how they found us.
+      if (!kShotMode && mounted) await ReviewService.ask(context, context.read<AppState>());
+      if (!mounted) return;
+    }
     if (_i < _count - 1) {
       setState(() => _i++);
     } else {
@@ -70,7 +72,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 400),
-      color: _bgs[_i],
+      color: AppColors.bg,
       child: Scaffold(
         backgroundColor: Colors.transparent,
         body: SafeArea(
@@ -124,13 +126,18 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
     final labels = [
       'Begin my journey 🙏',
       'Continue',
+      'Continue',
       'That is what I need 💛',
+      'Continue',
       'Build my daily routine',
+      'Continue',
       'Continue',
       _blockAll ? 'Set up my focus 🔒' : 'Continue',
       'Continue to my plan',
     ];
-    final enabled = !(_i == 1 && _habit == null) && !(_i == 4 && _goals.isEmpty);
+    final enabled = !(_i == 1 && _habit == null) &&
+        !(_i == 6 && _goals.isEmpty) &&
+        !(_i == _pHeard && _heard == null);
     return FilledButton(
       style: FilledButton.styleFrom(
         backgroundColor: _light ? AppColors.ink : Colors.white,
@@ -157,16 +164,258 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       case 1:
         return _habitPage();
       case 2:
-        return _solution();
+        return _chart();
       case 3:
-        return _rhythm();
+        return _solution();
       case 4:
-        return _focus();
+        return _mission();
       case 5:
+        return _rhythm();
+      case 6:
+        return _focus();
+      case 7:
+        return _heardPage();
+      case 8:
         return _distractions();
       default:
         return _permissions();
     }
+  }
+
+  // 3. bar chart: with and without Prayer Lock
+  Widget _chart() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Pray every day, 5x more easily with Prayer Lock', style: h(30, color: _fg)),
+          const SizedBox(height: 22),
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            decoration: BoxDecoration(
+                color: Colors.white, borderRadius: BorderRadius.circular(30)),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _bar('Without\nPrayer Lock', 0.14, const Color(0xFFE6E6EA), '20%',
+                    const Color(0xFFC4C4C8), Colors.white, false),
+                const SizedBox(width: 20),
+                _bar('With\nPrayer Lock', 1, const Color(0xFF3CC85F), '5x',
+                    const Color(0xFF34C759), Colors.white, true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+              'Prayer Lock makes it easy and keeps you faithful, one short prayer at a time.',
+              textAlign: TextAlign.center,
+              style: h(15, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
+        ],
+      );
+
+  Widget _bar(String label, double frac, Color color, String badge, Color badgeColor,
+          Color badgeText, bool strong) =>
+      Expanded(
+        child: Column(
+          children: [
+            Text(label,
+                textAlign: TextAlign.center,
+                style: h(15,
+                    color: strong ? AppColors.ink : AppColors.ink.withValues(alpha: 0.5),
+                    w: FontWeight.w600)),
+            const SizedBox(height: 14),
+            SizedBox(
+              height: 240,
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: frac),
+                  duration: const Duration(milliseconds: 1100),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, v, _) => Container(
+                    height: 240 * v.clamp(0.0, 1.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: strong
+                          ? const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Color(0xFF3CC85F), Color(0xFF8CE0A0)])
+                          : null,
+                      color: strong ? null : color,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+              decoration:
+                  BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(22)),
+              child: Text(badge, style: h(20, color: badgeText)),
+            ),
+          ],
+        ),
+      );
+
+  // 5. one mission: many open apps vs one prayer
+  Widget _mission() {
+    const apps = ['Instagram', 'TikTok', 'YouTube', 'Facebook'];
+    Widget tile(String text, {String? sub, bool on = true}) => Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.fromLTRB(12, 10, 8, 10),
+          decoration: BoxDecoration(
+              color: const Color(0xFFEDEDF1), borderRadius: BorderRadius.circular(16)),
+          child: Row(children: [
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                if (sub != null)
+                  Text(sub, style: h(11, color: AppColors.soft, w: FontWeight.w600)),
+                FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(text, style: h(15, color: AppColors.ink))),
+              ]),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 38,
+              height: 22,
+              padding: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                  color: const Color(0xFF34C759), borderRadius: BorderRadius.circular(12)),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                    width: 18,
+                    height: 18,
+                    decoration:
+                        const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
+              ),
+            ),
+          ]),
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('One prayer. One mission. Then scroll.', style: h(30, color: _fg)),
+        const SizedBox(height: 22),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Stack(clipBehavior: Clip.none, children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                      color: Colors.white, borderRadius: BorderRadius.circular(24)),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Today', style: h(15)),
+                    const SizedBox(height: 10),
+                    for (final a in apps) tile(a),
+                  ]),
+                ),
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 90,
+                  child: Center(
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFFFF3B30), shape: BoxShape.circle),
+                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 34),
+                    ),
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(24)),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Prayer Lock', style: h(15)),
+                  const SizedBox(height: 10),
+                  tile('Pray first'),
+                  const SizedBox(height: 24),
+                  Center(
+                    child: Container(
+                      width: 54,
+                      height: 54,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFF34C759), shape: BoxShape.circle),
+                      child: const Icon(Icons.check_rounded, color: Colors.white, size: 34),
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ]),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        Text(
+            'Prayer Lock asks for one short prayer before your apps open. Your day starts with God, not the feed.',
+            textAlign: TextAlign.center,
+            style: h(15, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
+      ],
+    );
+  }
+
+  // 8. where did you hear about us
+  Widget _heardPage() {
+    const options = [
+      ('TikTok', Icons.music_note_rounded),
+      ('Instagram', Icons.camera_alt_rounded),
+      ('YouTube', Icons.play_arrow_rounded),
+      ('Facebook', Icons.facebook_rounded),
+      ('App Store or Play Store', Icons.storefront_rounded),
+      ('Friend or family', Icons.people_alt_rounded),
+      ('Church', Icons.church_rounded),
+      ('Other', Icons.more_horiz_rounded),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Where did you hear about us?', style: h(30, color: _fg)),
+        const SizedBox(height: 18),
+        for (var n = 0; n < options.length; n++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: PastelCard(
+              color: _heard == options[n].$1 ? AppColors.ink : Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              onTap: () => setState(() => _heard = options[n].$1),
+              child: Row(children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                      color: Color(0xFFEDEDF1), shape: BoxShape.circle),
+                  alignment: Alignment.center,
+                  child: Text('${n + 1}',
+                      style: h(16, color: AppColors.soft, w: FontWeight.w600)),
+                ),
+                const SizedBox(width: 12),
+                Icon(options[n].$2,
+                    color: _heard == options[n].$1 ? Colors.white : AppColors.ink),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(options[n].$1,
+                      style: h(17,
+                          color: _heard == options[n].$1 ? Colors.white : AppColors.ink,
+                          w: FontWeight.w600)),
+                ),
+              ]),
+            ),
+          ),
+      ],
+    );
   }
 
   // ---- permissions ----
@@ -208,7 +457,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
 
   Widget _permCard({
     required Color color,
-    required String emoji,
+    required Widget icon,
     required String title,
     required String why,
     required bool ok,
@@ -221,7 +470,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Text(emoji, style: const TextStyle(fontSize: 30)),
+              icon,
               const SizedBox(width: 12),
               Expanded(child: Text(title, style: h(20, color: AppColors.ink))),
               if (ok) const Icon(Icons.check_circle, color: AppColors.ink),
@@ -255,7 +504,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
           const SizedBox(height: 16),
           _permCard(
             color: AppColors.blue,
-            emoji: '🔔',
+            icon: const BellPic(size: 56, ring: false),
             title: 'Notifications',
             why:
                 'Why: to remind you at your morning and night prayer times. Your prayers and feelings are never shown in a notification.',
@@ -267,7 +516,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
           if (defaultTargetPlatform == TargetPlatform.android)
             _permCard(
               color: AppColors.mint,
-              emoji: '📵',
+              icon: const Text('📵', style: TextStyle(fontSize: 30)),
               title: 'App blocking',
               why:
                   'Why: to notice when you open an app YOU chose to lock, so we can show your prayer first. Android asks you to turn on Prayer Lock in Accessibility. We never read your screen, messages or passwords, and we share nothing.',
@@ -278,7 +527,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
           else
             _permCard(
               color: AppColors.mint,
-              emoji: '📵',
+              icon: const Text('📵', style: TextStyle(fontSize: 30)),
               title: 'Screen Time access',
               why:
                   'Why: to cover the apps YOU choose with a "Pray first" screen. Apple keeps your app choices private on your phone. We never see which apps you pick, and we share nothing.',

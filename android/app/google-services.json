@@ -12,7 +12,20 @@
           "package_name": "com.coreinteractive.prayer_lock"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "110455972954-oa8oodhukulm0lqv9hjp1ejtbm61bn3p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coreinteractive.prayer_lock",
+            "certificate_hash": "d1bf1e5df3f3f29cd97f08cefddfe4f492dc0173"
+          }
+        },
+        {
+          "client_id": "110455972954-t9f2bi6h7ipkso7f2uukdthtj1emd04c.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBH6F3Y0SnXOx4rnx-RrT4s2InFxoIzR2k"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "110455972954-t9f2bi6h7ipkso7f2uukdthtj1emd04c.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "110455972954-34jitr53cuupmt720b1bjau1p89qteb3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.coreinteractive.prayerLock"
+              }
+            }
+          ]
         }
       }
     }

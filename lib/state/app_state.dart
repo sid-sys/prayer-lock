@@ -79,6 +79,17 @@ class AppState extends ChangeNotifier {
   bool remindersOn = true;
   List<String> goals = [];
 
+  /// Where the person heard about us (onboarding question).
+  String? heardFrom;
+  DateTime? onboardedAt;
+
+  /// Review ask: true once the person has given a rating in our review sheet.
+  bool rated = false;
+  DateTime? lastReviewAsk;
+
+  /// The "we will remind you before your trial ends" page was shown.
+  bool trialReminderSeen = false;
+
   Future<void> load() async {
     _p = await SharedPreferences.getInstance();
     lockedApps = _p.getStringList('locked') ?? [];
@@ -121,6 +132,13 @@ class AppState extends ChangeNotifier {
     nightMin = _p.getInt('nightMin') ?? nightMin;
     remindersOn = _p.getBool('remindersOn') ?? true;
     goals = _p.getStringList('goals') ?? [];
+    heardFrom = _p.getString('heardFrom');
+    final oa = _p.getString('onboardedAt');
+    onboardedAt = oa == null ? null : DateTime.tryParse(oa);
+    rated = _p.getBool('rated') ?? false;
+    final lr = _p.getString('lastReviewAsk');
+    lastReviewAsk = lr == null ? null : DateTime.tryParse(lr);
+    trialReminderSeen = _p.getBool('trialReminderSeen') ?? false;
     if (kDemoData) _seedDemo();
     final seen = _p.getStringList('seenBadges');
     if (seen == null) {
@@ -245,6 +263,8 @@ class AppState extends ChangeNotifier {
     accessUntil = null;
     paywallViews = 0;
     paymentAttempts = 0;
+    trialReminderSeen = false;
+    await _p.setBool('trialReminderSeen', false);
     await _p.setBool('onboarded', false);
     await _p.setBool('committed', false);
     await _p.remove('trialStart');
@@ -279,6 +299,11 @@ class AppState extends ChangeNotifier {
     trialStart = null;
     plan = 'yearly';
     goals = [];
+    heardFrom = null;
+    onboardedAt = null;
+    rated = false;
+    lastReviewAsk = null;
+    trialReminderSeen = false;
     await _sync();
     notifyListeners();
   }
@@ -338,11 +363,45 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setHeardFrom(String v) async {
+    heardFrom = v;
+    await _p.setString('heardFrom', v);
+  }
+
+  Future<void> markTrialReminderSeen() async {
+    trialReminderSeen = true;
+    await _p.setBool('trialReminderSeen', true);
+    notifyListeners();
+  }
+
+  // ---------- review ask ----------
+
+  /// Time to ask for a rating? Yes if the person never rated and we did not
+  /// ask in the last 7 days.
+  bool get reviewDue {
+    if (rated || !onboarded) return false;
+    final last = lastReviewAsk;
+    return last == null || DateTime.now().difference(last) >= const Duration(days: 7);
+  }
+
+  Future<void> markReviewAsked() async {
+    lastReviewAsk = DateTime.now();
+    await _p.setString('lastReviewAsk', lastReviewAsk!.toIso8601String());
+  }
+
+  Future<void> markRated(int stars) async {
+    rated = true;
+    await _p.setBool('rated', true);
+    await _p.setInt('ratingStars', stars);
+  }
+
   Future<void> finishOnboarding({
     required List<String> goalList,
     required int morning,
     required int night,
   }) async {
+    onboardedAt = DateTime.now();
+    await _p.setString('onboardedAt', onboardedAt!.toIso8601String());
     goals = goalList;
     morningMin = morning;
     nightMin = night;

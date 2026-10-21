@@ -21,3 +21,9 @@ const bool kDemoData =
 /// with sample data. Never turn this on in a release build.
 /// Build with:  --dart-define=SHOTMODE=true
 const bool kShotMode = bool.fromEnvironment('SHOTMODE', defaultValue: false);
+
+/// Show "Continue with Apple" on Android too, so it can be tested without an
+/// iPhone. It opens Apple's sign in page in the browser (Firebase web flow).
+/// In the real release (MOCK=false) Apple sign in is only shown on iPhone.
+const bool kAppleOnAndroid =
+    bool.fromEnvironment('APPLE_ON_ANDROID', defaultValue: kMockBuild);

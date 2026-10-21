@@ -86,8 +86,12 @@ jobs:
           # numbered so they sort in a good order
           shoot onboarding_0
           shoot onboarding_1
+          shoot onboarding_2
           shoot onboarding_3
-          shoot onboarding_6
+          shoot onboarding_4
+          shoot onboarding_7
+          shoot onboarding_9
+          shoot reminder
           shoot commit
           shoot commit_hold
           shoot paywall
