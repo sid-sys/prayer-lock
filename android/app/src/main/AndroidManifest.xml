@@ -2,6 +2,11 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+    <!-- Added by the installed_apps plugin. We never uninstall apps, and Play restricts it. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" tools:node="remove"/>
+    <!-- Added by a library. The app has no fingerprint or face login. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" tools:node="remove"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" tools:node="remove"/>
     <!-- Lets the user choose to see their time per app (they turn it on in Settings). -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions"/>
     <application

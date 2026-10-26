@@ -10,6 +10,17 @@ class NotificationService {
   static final _plugin = FlutterLocalNotificationsPlugin();
   static bool _ready = false;
 
+  /// Set by main.dart: called when the person taps the morning or night reminder.
+  static void Function(String kind)? onOpenPrayer;
+
+  /// 'morning' or 'night' if the app was started by tapping a reminder.
+  static String? launchKind;
+
+  static void _tapped(NotificationResponse r) {
+    final p = r.payload;
+    if (p == 'morning' || p == 'night') onOpenPrayer?.call(p!);
+  }
+
   static const _morningId = 101;
   static const _nightId = 102;
 
@@ -28,7 +39,13 @@ class NotificationService {
             requestSoundPermission: false,
           ),
         ),
+        onDidReceiveNotificationResponse: _tapped,
       );
+      final launch = await _plugin.getNotificationAppLaunchDetails();
+      final p = launch?.notificationResponse?.payload;
+      if ((launch?.didNotificationLaunchApp ?? false) && (p == 'morning' || p == 'night')) {
+        launchKind = p;
+      }
       _ready = true;
     } catch (e) {
       debugPrint('Notification init failed: $e');
@@ -105,6 +122,7 @@ class NotificationService {
         notificationDetails: _details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'morning',
         title: '☀️ Good morning. Meet Jesus first.',
         body: 'Take a breath 🙏 and begin today with prayer before the world asks anything of you.',
       );
@@ -114,6 +132,7 @@ class NotificationService {
         notificationDetails: _details,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'night',
         title: '🌙 Come as you are.',
         body: streak > 0
             ? 'Leave your worries with Him. Keep your $streak 🔥 day streak glowing before bed.'
@@ -171,6 +190,26 @@ class NotificationService {
     }
   }
 
+
+  /// Right after a prayer: tell the person their apps are unlocked.
+  /// Shows even if they left the Prayer Lock screen.
+  static Future<void> unlocked({required int minutes, required bool ios}) async {
+    await init();
+    if (!_ready) return;
+    final open = minutes % 60 == 0
+        ? (minutes == 60 ? '1 hour' : '${minutes ~/ 60} hours')
+        : '$minutes minutes';
+    try {
+      await _plugin.show(
+        id: 106,
+        title: '🔓 Your apps are unlocked',
+        body: ios
+            ? 'Open for $open. Go back to your app: swipe up and hold, or press Home.'
+            : 'Open for $open. They lock again after that.',
+        notificationDetails: _details,
+      );
+    } catch (_) {}
+  }
   /// Short celebration shown right after a prayer.
   static Future<void> celebrate(int streak) async {
     await init();

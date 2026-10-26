@@ -17,7 +17,6 @@ class AuthService {
   static Future<void> signUpEmail(String email, String pass) =>
       _auth.createUserWithEmailAndPassword(email: email.trim(), password: pass);
 
-  static Future<void> signInGuest() => _auth.signInAnonymously();
 
   static Future<void> resetPassword(String email) =>
       _auth.sendPasswordResetEmail(email: email.trim());
@@ -61,6 +60,16 @@ class AuthService {
         ..addScope('name');
       await _auth.signInWithProvider(provider);
     }
+  }
+
+  /// A store reviewer: signed in with email + password using a listed email.
+  /// (Requiring the password provider stops someone else from getting Pro by
+  /// signing in with Google or Apple using the same email.)
+  static bool isReviewer(User? u) {
+    final email = u?.email?.toLowerCase();
+    if (u == null || email == null) return false;
+    final withPassword = u.providerData.any((p) => p.providerId == 'password');
+    return withPassword && kReviewEmails.any((e) => e.toLowerCase() == email);
   }
 
   static Future<void> signOut() async {

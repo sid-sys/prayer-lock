@@ -8,7 +8,7 @@ Flutter app (Android + iPhone). User locks distracting apps. Opening one shows a
 Developer: Tetra Developers, tetraheaddevelopers@gmail.com. Admin account: sidharthbabu9@gmail.com.
 
 ## App flow now
-Splash (1.6 s) -> Onboarding (10 pages: hook, habit, 5x chart, solution, one mission, rhythm, goals,
+Onboarding (10 pages: hook, habit, 5x chart, solution, one mission, rhythm, goals,
 where did you hear, distractions, permissions; rating sheet after the "where did you hear" page) ->
 Commit (hold button) -> Sign up (Apple / Google first, email second, guest) -> Bell page (notification
 permission) -> Paywall (7 day free trial, hard) -> Home.
@@ -31,8 +31,9 @@ Rating sheet (`lib/services/review_service.dart`): stars + Submit counts as a ra
 - Prices on Apple: monthly $7.99, yearly $39.99, lifetime $79.99, 7 day free trial on both subscriptions.
 
 ## Build flags
-- `MOCK` (default true): admin panel open to everyone, test tools, FAKE purchases, "Skip (test)" on the paywall,
-  Apple sign in button on Android. Release must use `--dart-define=MOCK=false` (owner will say when).
+- `MOCK` (default FALSE = the real app). `--dart-define=MOCK=true` is for development only: admin panel with made-up data,
+  test tools, FAKE purchases, "Skip (test)" on the paywall, Apple sign in button on Android.
+  In the real app the admin panel is hidden until it has a real backend.
 - `APPLE_ON_ANDROID` (default = MOCK): shows "Continue with Apple" on Android for testing without an iPhone.
 - `DEMO`: sample data. `SHOTMODE`: screenshot mode (used by CI).
 - Windows: `android/gradle.properties` has `kotlin.incremental=false` (pub cache on C:, project on D:).
@@ -52,7 +53,27 @@ Rating sheet (`lib/services/review_service.dart`): stars + Submit counts as a ra
 - iPhone: after praying the screen now says clearly that Apple does not let apps open other apps.
 - Tested on a real Android phone over USB: prayer gate, open-app-after-prayer, usage numbers, alarms registered.
 
+## Done in the third pass (2026-10-26, not committed)
+- Lock intro screen ("Instagram is locked", Pray now / Not now). Morning and night prayers never lock or unlock apps.
+- Morning/night reminder notifications open that prayer when tapped. Android: if a locked app is opened while open
+  and a morning/night prayer is waiting, Prayer Lock nudges (max once per 45 min). iPhone: notifications only.
+- Email sign up hides Apple and Google. Guest mode removed. Name question and time question in onboarding.
+- "With and without" table in onboarding (page 6) and a measured version in Insights.
+- Insights: last 10 prayers + Show more (all prayers), per-app locked stats, closeness line, feelings donut,
+  time-of-day bars, 35-day consistency map. Events now store minutes open (gate_prayed value).
+- Branding: app icon, logo, splash and praying-girl loader come from `Prayer Lock App Branding Showcase.png`
+  (made by tools/make_brand_assets.ps1). The sheet is only 1536 px wide, so the art is soft. **Ask the designer for the
+  original high-resolution files** (icon 1024, logo, girl frames, splash) and replace assets/icon/icon.png,
+  assets/img/logo.png, assets/img/girl_pray_1..5.png, then run `dart run flutter_launcher_icons`.
+- Splash: native launch screen is plain peach-pink #FEB498; Flutter splash (lib/screens/splash.dart) shows 1.6 s.
+- Play screenshots: store/play (made by tools/make_play_shots.ps1 from phone screenshots taken with
+  `--dart-define=DEMO=true --dart-define=MOCK=true`; DEMO data is in memory only and off in the real app).
+- App checks: AI prayers fall back to a fixed prayer when the cloud function fails. Function logs show errors
+  (see work left 1).
+
 ## Work left (in order of importance)
+0. **Check AI prayers.** The phone showed the fixed fallback prayer. Cloud Function logs show an error on every
+   call. Look at the OpenAI key, billing and quota, and add logging of the OpenAI status in functions/index.js.
 1. **Apple sign in needs Apple + Firebase setup** (code is ready, Firebase says "not turned on yet"):
    - developer.apple.com > Identifiers > + > Services IDs, e.g. `com.coreinteractive.prayerLock.signin`.
      Turn on Sign in with Apple > Configure: domain `prayerlock-core-app.firebaseapp.com`,
@@ -74,7 +95,7 @@ Rating sheet (`lib/services/review_service.dart`): stars + Submit counts as a ra
    uninstall check (FCM dry run), purchase checks from the store servers, server-side admin check.
 6. **Release signing**: Android release build still uses the debug key. When a real key exists, add its SHA-1 and
    SHA-256 to the Firebase Android app (`firebase apps:android:sha:create`).
-7. **Before release**: MOCK=false, hide "Skip (test)", rotate the OpenAI key, consider Firebase App Check.
+7. **Before release**: rotate the OpenAI key, consider Firebase App Check.
 8. The "5x" and "20%" on the chart page are marketing numbers, not measured. Have a source or soften the claim.
 9. Server limit: 30 prayers per account per day (`functions/index.js`). Cost: `docs/openai-cost-and-margin.md`.
 

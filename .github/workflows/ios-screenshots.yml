@@ -89,8 +89,8 @@ jobs:
           shoot onboarding_2
           shoot onboarding_3
           shoot onboarding_4
-          shoot onboarding_7
           shoot onboarding_9
+          shoot onboarding_12
           shoot reminder
           shoot commit
           shoot commit_hold

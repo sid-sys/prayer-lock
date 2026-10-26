@@ -38,14 +38,14 @@ class PrayerService {
     final f = feeling.isEmpty ? '' : ' Today I feel ${feeling.toLowerCase()}.';
     switch (kind) {
       case 'morning':
-        return 'Good morning, Jesus.$f I give You this new day. Guide my steps, '
-            'guard my heart, and help me love the people I meet. Amen.';
+        return 'Good morning, Jesus.$f I give You this new day. Guide my steps and '
+            'guard my heart. Give me the strength to follow You and to love the people I meet today. Amen.';
       case 'night':
         return 'Thank You, Jesus, for this day.$f I lay my worries at Your feet. '
-            'Forgive me where I fell short, and give me peaceful rest tonight. Amen.';
+            'Forgive me where I fell short, and give me the strength to forgive, let go and rest in You tonight. Amen.';
       default:
-        return 'Dear God,$f I give this moment to You. Hold me, guide my steps, '
-            'and help me use my time with purpose. Thank You for Your love. Amen.';
+        return 'Dear God,$f I give this moment to You. I am weak, but You are strong. '
+            'Give me the strength to put You first, to say no to what pulls me away, and to use my time with purpose. Thank You for Your love. Amen.';
     }
   }
 }

@@ -19,6 +19,7 @@ import 'screens/shell.dart';
 import 'screens/splash.dart';
 import 'screens/trial_reminder.dart';
 import 'services/review_service.dart';
+import 'services/auth_service.dart';
 import 'services/blocker_service.dart';
 import 'services/notification_service.dart';
 import 'state/app_state.dart';
@@ -59,14 +60,12 @@ Widget _shotScreen() {
       return const Onboarding(startAt: 3);
     case 'onboarding_4':
       return const Onboarding(startAt: 4);
-    case 'onboarding_7':
-      return const Onboarding(startAt: 7);
     case 'onboarding_9':
       return const Onboarding(startAt: 9);
+    case 'onboarding_12':
+      return const Onboarding(startAt: 12);
     case 'reminder':
       return const TrialReminderScreen();
-    case 'splash':
-      return const SplashScreen();
     case 'commit':
       return const CommitScreen();
     case 'commit_hold':
@@ -110,6 +109,10 @@ class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserv
     // A locked app was opened: show the prayer first.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       BlockerService.listenBlocked(_onBlocked);
+      NotificationService.onOpenPrayer = _openScheduled;
+      final first = NotificationService.launchKind; // app started by a reminder
+      NotificationService.launchKind = null;
+      if (first != null) _openScheduled(first);
       context.read<AppState>().touch(); // the 3-day comeback clock starts again
       _maybeAskReview();
     });
@@ -141,7 +144,12 @@ class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserv
     await ReviewService.maybeAsk(ctx, s);
   }
 
-  void _onBlocked(String pkg) {
+  /// [raw] is "com.app" (a locked app was opened) or "com.app|morning" (an open
+  /// app was opened while a morning or night prayer is waiting).
+  void _onBlocked(String raw) {
+    final parts = raw.split('|');
+    final pkg = parts.first;
+    final kind = parts.length > 1 ? parts[1] : 'gate';
     final nav = navigatorKey.currentState;
     if (nav == null || _flowOpen) return;
     // Only after onboarding, paywall and sign in are done.
@@ -149,10 +157,23 @@ class _PrayerLockAppState extends State<PrayerLockApp> with WidgetsBindingObserv
     final s = context.read<AppState>();
     if (!s.onboarded || !s.entitled) return;
     _flowOpen = true;
-    s.logEvent('gate_shown', pkg); // a locked app was opened and we paused it
+    if (kind == 'gate') s.logEvent('gate_shown', pkg); // a locked app was opened and we paused it
     nav
         .push(MaterialPageRoute(
-            builder: (_) => PrayerFlow(kind: 'gate', openAfter: pkg)))
+            builder: (_) => PrayerFlow(kind: kind, openAfter: pkg)))
+        .whenComplete(() => _flowOpen = false);
+  }
+
+  /// The person tapped the morning or night reminder: open that prayer.
+  void _openScheduled(String kind) {
+    final nav = navigatorKey.currentState;
+    if (nav == null || _flowOpen) return;
+    if (FirebaseAuth.instance.currentUser == null) return;
+    final s = context.read<AppState>();
+    if (!s.onboarded || !s.entitled) return;
+    _flowOpen = true;
+    nav
+        .push(MaterialPageRoute(builder: (_) => PrayerFlow(kind: kind)))
         .whenComplete(() => _flowOpen = false);
   }
 
@@ -214,6 +235,14 @@ class _GateState extends State<_Gate> {
     super.dispose();
   }
 
+
+  /// Give the Firebase account the first name from onboarding (only if the
+  /// account has no name yet, for example email sign up).
+  void _syncProfileName(User user) {
+    final name = context.read<AppState>().userName;
+    if (name.isEmpty || (user.displayName?.isNotEmpty ?? false) || user.isAnonymous) return;
+    user.updateDisplayName(name).catchError((_) {});
+  }
   @override
   Widget build(BuildContext context) {
     if (kShotMode) return KeyedSubtree(key: ValueKey(_shot), child: _shotScreen());
@@ -233,6 +262,14 @@ class _GateState extends State<_Gate> {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
         if (!snap.hasData) return const AuthScreen();
+        if (!entitled && AuthService.isReviewer(snap.data)) {
+          // Store reviewer: give Pro (lifetime) right away, no paywall.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.read<AppState>().startTrial('lifetime');
+          });
+          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        _syncProfileName(snap.data!);
         if (!entitled) return reminderSeen ? const Paywall() : const TrialReminderScreen();
         return const Shell();
       },

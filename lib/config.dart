@@ -7,9 +7,11 @@ const kContactEmail = 'tetraheaddevelopers@gmail.com';
 /// Only this Google account can open the admin panel in the real build.
 const kAdminEmail = 'sidharthbabu9@gmail.com';
 
-/// Mock build: the admin panel is open to everyone and shows made-up data.
-/// Turn off for the real release.
-const bool kMockBuild = bool.fromEnvironment('MOCK', defaultValue: true);
+/// Mock build (OFF by default = the real app). Turn on only for development:
+///   flutter run --dart-define=MOCK=true
+/// A mock build shows the admin panel with made-up data, test tools, the
+/// "Skip (test)" link, fake purchases and Apple sign in on Android.
+const bool kMockBuild = bool.fromEnvironment('MOCK', defaultValue: false);
 
 /// Fills the app with 9 days of sample prayers (for store screenshots).
 /// Not saved to the phone. Run with:  --dart-define=DEMO=true
@@ -27,3 +29,9 @@ const bool kShotMode = bool.fromEnvironment('SHOTMODE', defaultValue: false);
 /// In the real release (MOCK=false) Apple sign in is only shown on iPhone.
 const bool kAppleOnAndroid =
     bool.fromEnvironment('APPLE_ON_ANDROID', defaultValue: kMockBuild);
+
+/// Store review accounts (Google Play / App Store reviewers sign in with email
+/// and password). They get the Pro plan without paying. They are NOT admins:
+/// the admin panel only opens for [kAdminEmail] in a real build.
+/// Create the same user in Firebase > Authentication > Users (Email/Password).
+const kReviewEmails = ['review@gmail.com'];

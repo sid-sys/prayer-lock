@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -34,11 +35,31 @@ class ActivityEvent {
   final DateTime at;
   final String type;
   final String? pkg;
-  ActivityEvent(this.at, this.type, [this.pkg]);
 
-  Map<String, dynamic> toJson() => {'t': at.millisecondsSinceEpoch, 'y': type, if (pkg != null) 'p': pkg};
+  /// A number that goes with the event. For gate_prayed: minutes the apps stayed open.
+  final int? value;
+  ActivityEvent(this.at, this.type, [this.pkg, this.value]);
+
+  Map<String, dynamic> toJson() => {
+        't': at.millisecondsSinceEpoch,
+        'y': type,
+        if (pkg != null) 'p': pkg,
+        if (value != null) 'v': value,
+      };
   factory ActivityEvent.fromJson(Map<String, dynamic> j) => ActivityEvent(
-      DateTime.fromMillisecondsSinceEpoch(j['t'] as int), j['y'] as String, j['p'] as String?);
+      DateTime.fromMillisecondsSinceEpoch(j['t'] as int), j['y'] as String, j['p'] as String?,
+      (j['v'] as num?)?.toInt());
+}
+
+/// What happened with one locked app: how often it paused you, how often you
+/// prayed and opened it, and for how long it stayed open. All measured.
+class AppLockStat {
+  final String pkg;
+  final int blocked; // times the pause screen showed
+  final int unlocked; // times you prayed and it opened
+  final int skipped; // times you walked away
+  final int openMinutes; // total minutes it stayed open after prayers
+  const AppLockStat(this.pkg, this.blocked, this.unlocked, this.skipped, this.openMinutes);
 }
 
 class PrayerBadge {
@@ -81,6 +102,12 @@ class AppState extends ChangeNotifier {
 
   /// Where the person heard about us (onboarding question).
   String? heardFrom;
+
+  /// First name from onboarding (optional). Used for greetings.
+  String userName = '';
+
+  /// Hours a day on distracting apps, the answer in onboarding (0 = not asked).
+  double dailyHours = 0;
   DateTime? onboardedAt;
 
   /// Review ask: true once the person has given a rating in our review sheet.
@@ -133,6 +160,8 @@ class AppState extends ChangeNotifier {
     remindersOn = _p.getBool('remindersOn') ?? true;
     goals = _p.getStringList('goals') ?? [];
     heardFrom = _p.getString('heardFrom');
+    userName = _p.getString('userName') ?? '';
+    dailyHours = _p.getDouble('dailyHours') ?? 0;
     final oa = _p.getString('onboardedAt');
     onboardedAt = oa == null ? null : DateTime.tryParse(oa);
     rated = _p.getBool('rated') ?? false;
@@ -300,6 +329,8 @@ class AppState extends ChangeNotifier {
     plan = 'yearly';
     goals = [];
     heardFrom = null;
+    userName = '';
+    dailyHours = 0;
     onboardedAt = null;
     rated = false;
     lastReviewAsk = null;
@@ -311,32 +342,60 @@ class AppState extends ChangeNotifier {
   /// Sample data for store screenshots. Kept in memory only.
   void _seedDemo() {
     final now = DateTime.now();
-    const feelings = ['Grateful', 'Hopeful', 'Peaceful', 'Tired', 'Anxious', 'Grateful', 'Hopeful', 'Peaceful', 'Grateful'];
-    const rels = [2, 1, 3, 5, 2, 4, 5, 3, 5];
     const prayers = [
       'Good morning, Jesus. Thank You for this new day. Guide my steps, guard my heart, and help me love the people I meet today. Amen.',
       'Thank You, Jesus, for this day. I lay my worries at Your feet and ask for peaceful rest tonight. Amen.',
     ];
+    final r = math.Random(11);
+    const feelPool = ['Grateful', 'Grateful', 'Hopeful', 'Peaceful', 'Peaceful', 'Tired', 'Anxious', 'Stressed', 'Sad', 'Lost'];
+    const gatePrayers = [
+      'Dear God, I give this moment to You. Hold me, guide my steps, and help me use my time with purpose. Thank You for Your love. Amen.',
+      'Lord, slow my heart before I scroll. Remind me that You are enough. Help me use this phone to love, not to escape. Amen.',
+    ];
     history = [];
-    for (var i = 8; i >= 0; i--) {
+    for (var i = 34; i >= 0; i--) {
       final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: i));
-      history.add(PrayerEntry(day.add(const Duration(hours: 7, minutes: 5)), rels[8 - i],
-          feelings[8 - i], kind: 'morning', prayer: prayers[0]));
-      history.add(PrayerEntry(day.add(const Duration(hours: 21, minutes: 40)),
-          rels[8 - i], feelings[(i + 2) % 9], kind: 'night', prayer: prayers[1]));
-      if (i % 2 == 0) {
-        history.add(PrayerEntry(day.add(const Duration(hours: 13)), 4, 'Hopeful', kind: 'gate'));
+      final streakPart = i < 12; // a strong recent streak
+      final p = streakPart ? 1.0 : 0.62;
+      if (r.nextDouble() < p) {
+        history.add(PrayerEntry(day.add(Duration(hours: 6 + r.nextInt(2), minutes: r.nextInt(50))),
+            (1 + r.nextInt(5)).clamp(2, 5), feelPool[r.nextInt(feelPool.length)], kind: 'morning', prayer: prayers[0]));
+      }
+      if (r.nextDouble() < p * 0.8) {
+        history.add(PrayerEntry(day.add(Duration(hours: 21 + r.nextInt(2), minutes: r.nextInt(40))),
+            2 + r.nextInt(4), feelPool[r.nextInt(feelPool.length)], kind: 'night', prayer: prayers[1]));
+      }
+      for (var g = r.nextInt(3); g > 0; g--) {
+        history.add(PrayerEntry(day.add(Duration(hours: 10 + r.nextInt(9), minutes: r.nextInt(55))),
+            2 + r.nextInt(4), r.nextInt(5) == 0 ? 'Private' : feelPool[r.nextInt(feelPool.length)],
+            kind: 'gate', prayer: gatePrayers[r.nextInt(2)]));
       }
     }
     history.removeWhere((e) => e.date.isAfter(now));
-    events = [
-      for (var i = 0; i < 32; i++)
-        ActivityEvent(now.subtract(Duration(hours: 3 + i * 5)), 'gate_shown', 'com.instagram.android'),
-      for (var i = 0; i < 14; i++)
-        ActivityEvent(now.subtract(Duration(hours: 4 + i * 11)), 'gate_abandoned', 'com.instagram.android'),
-      for (var i = 0; i < 12; i++)
-        ActivityEvent(now.subtract(Duration(hours: 5 + i * 13)), 'gate_prayed', 'com.instagram.android'),
+    history.sort((a, b) => a.date.compareTo(b.date));
+    // Locked apps: (package, locked, opened, walked away). Minutes follow the open window.
+    const apps = [
+      ('com.instagram.android', 46, 31, 15),
+      ('com.zhiliaoapp.musically', 29, 18, 11),
+      ('com.google.android.youtube', 21, 17, 4),
+      ('com.facebook.katana', 12, 7, 5),
+      ('com.whatsapp.w4b', 8, 8, 0),
     ];
+    const windows = [30, 50, 60, 60, 120];
+    events = [];
+    for (final a in apps) {
+      // Every pause ends in a prayer (the app opens) or the person walking away.
+      for (var i = 0; i < a.$2; i++) {
+        final at = now.subtract(Duration(hours: 2 + r.nextInt(24 * 80)));
+        events.add(ActivityEvent(at, 'gate_shown', a.$1));
+        if (i < a.$3) {
+          events.add(ActivityEvent(at.add(const Duration(minutes: 1)), 'gate_prayed', a.$1,
+              windows[r.nextInt(windows.length)]));
+        } else {
+          events.add(ActivityEvent(at.add(const Duration(seconds: 30)), 'gate_abandoned', a.$1));
+        }
+      }
+    }
     usageDaily = {
       for (var i = 0; i < 14; i++)
         '${now.subtract(Duration(days: i)).year}-${now.subtract(Duration(days: i)).month.toString().padLeft(2, '0')}-${now.subtract(Duration(days: i)).day.toString().padLeft(2, '0')}': {
@@ -363,6 +422,17 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+
+  Future<void> setDailyHours(double v) async {
+    dailyHours = v;
+    await _p.setDouble('dailyHours', v);
+  }
+
+  Future<void> setUserName(String v) async {
+    userName = v;
+    await _p.setString('userName', v);
+    notifyListeners();
+  }
   Future<void> setHeardFrom(String v) async {
     heardFrom = v;
     await _p.setString('heardFrom', v);
@@ -457,13 +527,37 @@ class AppState extends ChangeNotifier {
     if (onboarded && entitled) await rescheduleReminders();
   }
 
-  void logEvent(String type, [String? pkg]) {
-    events.add(ActivityEvent(DateTime.now(), type, pkg));
+  void logEvent(String type, [String? pkg, int? value]) {
+    events.add(ActivityEvent(DateTime.now(), type, pkg, value));
     final cutoff = DateTime.now().subtract(const Duration(days: 90));
     events.removeWhere((e) => e.at.isBefore(cutoff));
     if (events.length > 2000) events = events.sublist(events.length - 2000);
     _p.setString('events', jsonEncode(events.map((e) => e.toJson()).toList()));
     notifyListeners();
+  }
+
+  /// Per-app lock numbers from the saved events (up to 90 days), most paused first.
+  List<AppLockStat> lockStats() {
+    final blocked = <String, int>{}, unlocked = <String, int>{}, skipped = <String, int>{}, mins = <String, int>{};
+    for (final e in events) {
+      final p = e.pkg;
+      if (p == null) continue;
+      switch (e.type) {
+        case 'gate_shown':
+          blocked[p] = (blocked[p] ?? 0) + 1;
+        case 'gate_prayed':
+          unlocked[p] = (unlocked[p] ?? 0) + 1;
+          mins[p] = (mins[p] ?? 0) + (e.value ?? 0);
+        case 'gate_abandoned':
+          skipped[p] = (skipped[p] ?? 0) + 1;
+      }
+    }
+    final keys = {...blocked.keys, ...unlocked.keys, ...skipped.keys};
+    final out = [
+      for (final k in keys)
+        AppLockStat(k, blocked[k] ?? 0, unlocked[k] ?? 0, skipped[k] ?? 0, mins[k] ?? 0)
+    ]..sort((a, b) => b.blocked.compareTo(a.blocked));
+    return out;
   }
 
   int countEvents(String type, {int days = 7}) {
@@ -728,9 +822,16 @@ class AppState extends ChangeNotifier {
 
   Future<void> toggleApp(String pkg) async {
     // Change the list first so quick taps on many apps never get lost.
-    lockedApps = lockedApps.contains(pkg)
-        ? (List.of(lockedApps)..remove(pkg))
-        : (List.of(lockedApps)..add(pkg));
+    final adding = !lockedApps.contains(pkg);
+    lockedApps = adding
+        ? (List.of(lockedApps)..add(pkg))
+        : (List.of(lockedApps)..remove(pkg));
+    // A newly locked app must lock now, even if an earlier prayer left the
+    // apps open for a while.
+    if (adding && isUnlocked) {
+      unlockedUntil = null;
+      await _p.remove('until');
+    }
     _checkBadges();
     notifyListeners();
     await _p.setStringList('locked', lockedApps);
@@ -763,10 +864,14 @@ class AppState extends ChangeNotifier {
     history.add(e);
     await _p.setStringList(
         'history', history.map((x) => jsonEncode(x.toJson())).toList());
-    final m = minutes == 0 ? 60 : minutes; // automatic = 60 minutes
-    unlockedUntil = DateTime.now().add(Duration(minutes: m));
-    await _p.setString('until', unlockedUntil!.toIso8601String());
-    await _sync();
+    // Only a prayer you do to open a locked app ("gate") opens the apps.
+    // Morning and night prayers never lock or unlock anything.
+    if (e.kind == 'gate') {
+      final m = minutes == 0 ? 60 : minutes; // automatic = 60 minutes
+      unlockedUntil = DateTime.now().add(Duration(minutes: m));
+      await _p.setString('until', unlockedUntil!.toIso8601String());
+      await _sync();
+    }
     await rescheduleReminders();
     _checkBadges();
     notifyListeners();
@@ -787,5 +892,19 @@ class AppState extends ChangeNotifier {
         packages: blockingOn ? lockedApps : [],
         unlockedUntil: unlockedUntil,
         enabled: blockingOn,
+        morningMin: remindersOn ? morningMin : -1,
+        nightMin: remindersOn ? nightMin : -1,
+        morningDone: _lastDay('morning'),
+        nightDone: _lastDay('night'),
       );
+
+  /// Date (yyyy-mm-dd) of the last prayer of this kind, or ''.
+  String _lastDay(String kind) {
+    DateTime? last;
+    for (final e in history) {
+      if (e.kind == kind && (last == null || e.date.isAfter(last))) last = e.date;
+    }
+    if (last == null) return '';
+    return '${last.year}-${last.month.toString().padLeft(2, '0')}-${last.day.toString().padLeft(2, '0')}';
+  }
 }

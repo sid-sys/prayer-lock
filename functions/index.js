@@ -20,11 +20,14 @@ const FEELINGS = [
 
 const STYLE = {
   morning:
-    "A morning prayer to Jesus: gratitude for the new day, surrender, and guidance for today.",
+    "A morning prayer to Jesus: gratitude for the new day and surrender. Humbly ask God for the strength " +
+    "to follow Him and to love people today.",
   night:
-    "A night prayer to Jesus: thanks for the day, forgiveness, releasing worries, and peaceful rest.",
+    "A night prayer to Jesus: thanks for the day and forgiveness. Humbly ask God for the strength " +
+    "to forgive, to let go of worries and to rest in Him.",
   gate:
-    "A short prayer to pause before using the phone: a moment with God, focus, and wise use of time.",
+    "A short prayer to pause before using the phone. Humbly admit weakness and beg God for the strength " +
+    "to put Him first, to say no to distractions and to use time wisely.",
 };
 
 /** Count one prayer for this account today. Returns false if the limit is used up. */
@@ -79,16 +82,16 @@ exports.generatePrayer = onCall(
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        max_tokens: 160,
+        max_tokens: 220,
         temperature: 0.8,
         messages: [
           {
             role: "system",
             content:
-              "You write short Christian prayers (3 to 5 sentences, under 75 words) " +
+              "You write short Christian prayers (4 to 6 sentences, under 90 words) " +
               "for a person to read out loud. Use simple words, warm tone, first person. " +
               STYLE[kind] +
-              " End with Amen. Output only the prayer.",
+              " Include at least one sentence that asks God for strength. End with Amen. Output only the prayer.",
           },
           {
             role: "user",

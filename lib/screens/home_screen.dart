@@ -30,13 +30,14 @@ class HomeScreen extends StatelessWidget {
     final s = context.watch<AppState>();
     final v = verseOfDay();
     final hour = DateTime.now().hour;
+    final who = s.userName.isEmpty ? '' : ', ${s.userName}';
     final greeting = hour < 5
-        ? 'Good night 🌙'
+        ? 'Good night$who 🌙'
         : hour < 12
-            ? 'Good morning ☀️'
+            ? 'Good morning$who ☀️'
             : hour < 18
-                ? 'Good afternoon 🌤️'
-                : 'Good evening 🌙';
+                ? 'Good afternoon$who 🌤️'
+                : 'Good evening$who 🌙';
     final due = s.dueSession;
 
     return ListView(

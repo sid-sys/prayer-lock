@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show SystemNavigator;
 import 'package:provider/provider.dart';
 import '../data/verses.dart';
 import '../services/blocker_service.dart';
@@ -8,8 +10,9 @@ import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/fire.dart';
 import '../widgets/mood_face.dart';
+import '../widgets/praying_loader.dart';
 
-enum _Step { mood, feeling, prayer, schedule, done }
+enum _Step { intro, mood, feeling, prayer, schedule, done }
 
 /// kind: 'morning', 'night' or 'gate'.
 class PrayerFlow extends StatefulWidget {
@@ -30,7 +33,8 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
 
   bool _completed = false;
   late final AppState _app = context.read<AppState>();
-  _Step _step = _Step.mood;
+  // A locked app (or a waiting prayer) sent the person here: say why first.
+  late _Step _step = widget.openAfter != null ? _Step.intro : _Step.mood;
   double _mood = 0.6;
   String _feeling = '';
   String? _prayer;
@@ -58,21 +62,30 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
   @override
   void dispose() {
     // Left before praying: the person walked away from the locked app.
-    if (widget.openAfter != null && !_completed) _app.logEvent('gate_abandoned', widget.openAfter);
+    if (widget.openAfter != null && widget.kind == 'gate' && !_completed) {
+      _app.logEvent('gate_abandoned', widget.openAfter);
+    }
     _ring.dispose();
     super.dispose();
   }
 
   Future<void> _finish() async {
     final s = context.read<AppState>();
-    await s.setSchedule(_minutes);
+    // Only a prayer that opens a locked app ("gate") touches the lock.
+    final gate = widget.kind == 'gate';
+    if (gate) await s.setSchedule(_minutes);
     await s.completePrayer(
         PrayerEntry(DateTime.now(), _rel, _feeling.isEmpty ? 'Private' : _feeling,
             kind: widget.kind, prayer: _prayer),
         _minutes);
     _completed = true;
-    if (widget.openAfter != null) s.logEvent('gate_prayed', widget.openAfter);
+    if (widget.openAfter != null && gate) {
+      s.logEvent('gate_prayed', widget.openAfter, _minutes == 0 ? 60 : _minutes);
+    }
     NotificationService.celebrate(s.streak);
+    if (gate && s.lockedCount > 0) {
+      NotificationService.unlocked(minutes: _minutes == 0 ? 60 : _minutes, ios: Platform.isIOS);
+    }
     if (mounted) setState(() => _step = _Step.done);
   }
 
@@ -122,12 +135,60 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
   }
 
   Widget _body() => switch (_step) {
+        _Step.intro => _introStep(),
         _Step.mood => _moodStep(),
         _Step.feeling => _feelingStep(),
         _Step.prayer => _prayerStep(),
         _Step.schedule => _scheduleStep(),
         _Step.done => _doneStep(),
       };
+
+  // 0. why am I here? (a locked app was opened, or a prayer is waiting)
+  Widget _introStep() {
+    final pkg = widget.openAfter!;
+    final app = pkg == 'ios' ? 'your app' : BlockerService.nameOf(pkg);
+    final gate = widget.kind == 'gate';
+    final title = gate
+        ? '🔒 ${pkg == 'ios' ? 'Your app is' : '$app is'} locked'
+        : widget.kind == 'morning'
+            ? '🌅 Your morning prayer is waiting'
+            : '🌙 Your night prayer is waiting';
+    final body = gate
+        ? 'Take a moment with God before you open it. A short prayer takes about a minute, then your apps open.'
+        : 'Your apps are open. Pray now, or open $app and pray later. This prayer never locks or unlocks your apps.';
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Pic(gate ? 'lock' : (widget.kind == 'morning' ? 'sun' : 'moon'), size: 120),
+        const SizedBox(height: 24),
+        Text(title, textAlign: TextAlign.center, style: h(30)),
+        const SizedBox(height: 14),
+        Text(body,
+            textAlign: TextAlign.center,
+            style: h(17, color: AppColors.soft, w: FontWeight.w500).copyWith(height: 1.4)),
+        const SizedBox(height: 36),
+        FilledButton(
+          onPressed: () => setState(() => _step = _Step.mood),
+          child: const Text('Pray now 🙏'),
+        ),
+        const SizedBox(height: 6),
+        TextButton(
+          onPressed: () {
+            if (gate) {
+              // Leave Prayer Lock. The locked app stays locked.
+              SystemNavigator.pop();
+            } else {
+              _app.logEvent('gate_continue', pkg);
+              Navigator.pop(context);
+              BlockerService.launchApp(pkg);
+            }
+          },
+          child: Text(gate ? 'Not now' : 'Later. Open $app',
+              style: h(16, color: AppColors.soft, w: FontWeight.w700)),
+        ),
+      ],
+    );
+  }
 
   // 1. face slider
   Widget _moodStep() => Column(
@@ -225,18 +286,36 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
         const SizedBox(height: 20),
         Expanded(
           child: _prayer == null
-              ? const Center(child: CircularProgressIndicator())
+              ? const Center(child: PrayingLoader())
               : SingleChildScrollView(
                   child: Column(
                     children: [
-                      if (widget.kind == 'morning') ...[
-                        Text('"${v.text}"',
-                            textAlign: TextAlign.center,
-                            style: serif(16, color: AppColors.ink)),
-                        Text(v.ref, style: const TextStyle(color: AppColors.soft)),
-                        const SizedBox(height: 22),
-                      ],
-                      Text(_prayer!, textAlign: TextAlign.center, style: serif(23)),
+                      Text(_prayer!, textAlign: TextAlign.center, style: serif(20)),
+                      const SizedBox(height: 22),
+                      // The verse of the day, under every prayer.
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          boxShadow: [
+                            BoxShadow(
+                                color: AppColors.gold.withValues(alpha: 0.35),
+                                blurRadius: 18,
+                                offset: const Offset(0, 6)),
+                          ],
+                        ),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('📖 verse of the day',
+                              style: h(14, color: AppColors.gold, w: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          Text('"${v.text}"', style: serif(16, color: AppColors.ink)),
+                          const SizedBox(height: 6),
+                          Text(v.ref,
+                              style: h(13, color: AppColors.soft, w: FontWeight.w700)),
+                        ]),
+                      ),
                     ],
                   ),
                 ),
@@ -288,7 +367,13 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
                 ),
                 const SizedBox(height: 14),
                 FilledButton(
-                  onPressed: done ? () => setState(() => _step = _Step.schedule) : null,
+                  // Morning and night prayers finish here. Only a gate prayer
+                  // asks when to lock again.
+                  onPressed: done
+                      ? () => widget.kind == 'gate'
+                          ? setState(() => _step = _Step.schedule)
+                          : _finish()
+                      : null,
                   child: Text(done ? _doneButton : 'Keep praying… $left'),
                 ),
               ],
@@ -337,6 +422,36 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
     });
   }
 
+
+  static String _openFor(int minutes) {
+    final m = minutes == 0 ? 60 : minutes;
+    if (m == 60) return '1 hour';
+    if (m % 60 == 0) return '${m ~/ 60} hours';
+    return '$m minutes';
+  }
+
+  /// Green card shown right after praying: your apps are unlocked.
+  Widget _unlockedBanner() {
+    final ios = Platform.isIOS;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: AppColors.mint, borderRadius: BorderRadius.circular(22)),
+      child: Column(children: [
+        Text('🔓 Your apps are unlocked', style: h(20)),
+        const SizedBox(height: 4),
+        Text(
+          ios
+              ? 'Open for ${_openFor(_minutes)}. Now go back to the app you wanted: swipe up and hold for the app switcher, or press Home and open it. Apple does not let Prayer Lock open it for you.'
+              : 'Open for ${_openFor(_minutes)}. They lock again after that.',
+          textAlign: TextAlign.center,
+          style: h(13.5, w: FontWeight.w600),
+        ),
+      ]),
+    );
+  }
   // 5. done
   Widget _doneStep() {
     final s = context.watch<AppState>();
@@ -344,7 +459,8 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const AnimatedFire(size: 110),
+        if (widget.kind == 'gate' && s.lockedCount > 0) _unlockedBanner(),
+        const AnimatedFire(size: 90),
         Text('${s.streak}', style: h(72)),
         Text(s.streak == 1 ? 'day in a row' : 'days in a row',
             style: h(18, color: AppColors.soft, w: FontWeight.w500)),
@@ -357,18 +473,7 @@ class _PrayerFlowState extends State<PrayerFlow> with SingleTickerProviderStateM
           Text('Rest peacefully. You are not alone 💛',
               style: h(16, color: AppColors.soft, w: FontWeight.w500)),
         ],
-        if (widget.openAfter == 'ios') ...[
-          // Apple does not let an app open another app. So we say it clearly.
-          const SizedBox(height: 22),
-          PastelCard(
-            color: Colors.white,
-            padding: const EdgeInsets.all(14),
-            child: Text(
-                'Your apps are open now. Go back to the app you wanted: tap the app switcher (swipe up from the bottom and hold), or press Home and open it. Apple does not let Prayer Lock open it for you.',
-                textAlign: TextAlign.center,
-                style: h(14, color: AppColors.ink, w: FontWeight.w600)),
-          ),
-        ],
+        const SizedBox(height: 0),
         const SizedBox(height: 28),
         FilledButton(
             onPressed: () {

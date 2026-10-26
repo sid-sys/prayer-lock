@@ -33,6 +33,10 @@ class MainActivity : FlutterActivity() {
                     getSharedPreferences("blocker", Context.MODE_PRIVATE).edit()
                         .putStringSet("packages", pkgs.toSet())
                         .putLong("until", until)
+                        .putInt("morningMin", (call.argument<Number>("morningMin") ?: -1).toInt())
+                        .putInt("nightMin", (call.argument<Number>("nightMin") ?: -1).toInt())
+                        .putString("morningDone", call.argument<String>("morningDone") ?: "")
+                        .putString("nightDone", call.argument<String>("nightDone") ?: "")
                         .apply()
                     result.success(null)
                 }
@@ -92,8 +96,12 @@ class MainActivity : FlutterActivity() {
     private fun readBlocked(i: Intent?) {
         val pkg = i?.getStringExtra("blocked_package")
         if (pkg != null) {
-            pendingBlocked = pkg
+            // "com.app" = a locked app was opened. "com.app|morning" = it was
+            // opened while unlocked, but a morning or night prayer is waiting.
+            val kind = i.getStringExtra("reminder_kind")
+            pendingBlocked = if (kind != null) "$pkg|$kind" else pkg
             i.removeExtra("blocked_package")
+            i.removeExtra("reminder_kind")
         }
     }
 

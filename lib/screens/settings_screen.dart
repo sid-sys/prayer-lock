@@ -4,12 +4,14 @@ import 'package:provider/provider.dart';
 import '../admin/admin_dashboard.dart';
 import '../config.dart';
 import '../services/auth_service.dart';
-import '../services/blocker_service.dart';
 import '../services/purchase_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/accessibility_disclosure.dart';
 import 'legal_screen.dart';
+import 'onboarding.dart';
 import 'plan_screen.dart';
+import 'prayer_flow.dart';
 
 int _badgePreview = 0;
 
@@ -144,7 +146,7 @@ class SettingsScreen extends StatelessWidget {
             leading: const Icon(Icons.shield_outlined),
             title: const Text('Allow app blocking'),
             subtitle: const Text('Open the phone setting that lets us block apps'),
-            onTap: BlockerService.requestPermission,
+            onTap: () => askAccessibility(context),
           ),
         ),
         const SizedBox(height: 12),
@@ -179,7 +181,8 @@ class SettingsScreen extends StatelessWidget {
         const SizedBox(height: 12),
 
         // Admin (admin account only; everyone in the mock build)
-        if (isAdminUser())
+        // The panel only has made-up data for now, so it is hidden in the real app.
+        if (kMockBuild && isAdminUser())
           Card(
             color: AppColors.yellow,
             child: ListTile(
@@ -191,7 +194,7 @@ class SettingsScreen extends StatelessWidget {
                   context, MaterialPageRoute(builder: (_) => const AdminDashboard())),
             ),
           ),
-        if (isAdminUser()) const SizedBox(height: 12),
+        if (kMockBuild && isAdminUser()) const SizedBox(height: 12),
 
         // Test tools (mock build only)
         if (kMockBuild)
@@ -213,6 +216,24 @@ class SettingsScreen extends StatelessWidget {
                     title: const Text('Redo onboarding'),
                     subtitle: const Text('See onboarding, commit and paywall again'),
                     onTap: () => _redo(context, s),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Text('🔒', style: TextStyle(fontSize: 22)),
+                    title: const Text('Preview the lock screen'),
+                    subtitle: const Text('Shows what a locked app opens, without opening any app'),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const PrayerFlow(kind: 'gate', openAfter: 'com.instagram.android'))),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Text('📊', style: TextStyle(fontSize: 22)),
+                    title: const Text('Preview the comparison page'),
+                    subtitle: const Text('The with and without Prayer Lock table'),
+                    onTap: () => Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => const Onboarding(startAt: 6))),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,

@@ -24,7 +24,7 @@ const _privacy = <_Section>[
   _Section('Who we are',
       '$kDeveloperName ("we", "us") makes Prayer Lock. Questions about this policy: $kContactEmail.'),
   _Section('What we collect',
-      'Account: your email address, or your Google or Apple sign in ID, or an anonymous ID if you use guest mode.\n\n'
+      'Account: your email address, or your Google or Apple sign in ID. If you give your first name in the app, or sign in with Google or Apple, your name is saved with your account.\n\n'
       'Prayer check-ins: how close you feel to God, how you feel, and the prayers shown to you. These are stored on your phone.\n\n'
       'Locked apps: the list of apps you choose to lock. It is stored on your phone.\n\n'
       'Subscription status and simple usage events (for example: finished onboarding, saw the paywall, started a trial). We use these to run and improve the app.'),

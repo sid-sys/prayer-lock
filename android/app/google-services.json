@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "110455972954-94lnkqcdha0d930h6jqbqeeshaihspok.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coreinteractive.prayer_lock",
+            "certificate_hash": "a0d5bd06a244dace565badaf4720e0d8a6d79820"
+          }
+        },
+        {
+          "client_id": "110455972954-jud0btnhh1ttkudbem0uotkvntncm4tb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.coreinteractive.prayer_lock",
+            "certificate_hash": "15512640b62ed17af1f991930097b1ac77999c96"
+          }
+        },
+        {
           "client_id": "110455972954-oa8oodhukulm0lqv9hjp1ejtbm61bn3p.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

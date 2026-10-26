@@ -73,12 +73,22 @@ class BlockerService {
     required List<String> packages,
     required DateTime? unlockedUntil,
     bool enabled = true,
+    int morningMin = -1,
+    int nightMin = -1,
+    String morningDone = '',
+    String nightDone = '',
   }) async {
     try {
       await _ch.invokeMethod('update', {
         'packages': packages,
         'unlockedUntil': unlockedUntil?.millisecondsSinceEpoch ?? 0,
         'enabled': enabled,
+        // For the "your prayer is waiting" nudge when a locked app is opened
+        // while it is open. -1 = reminders off.
+        'morningMin': morningMin,
+        'nightMin': nightMin,
+        'morningDone': morningDone,
+        'nightDone': nightDone,
       });
     } on MissingPluginException {
       // native side not ready yet
@@ -174,7 +184,16 @@ class BlockerService {
   }
 
   /// Name of an app from its package (uses the loaded app list).
+  static const _demoNames = {
+    'com.instagram.android': 'Instagram',
+    'com.zhiliaoapp.musically': 'TikTok',
+    'com.google.android.youtube': 'YouTube',
+    'com.facebook.katana': 'Facebook',
+    'com.whatsapp.w4b': 'WhatsApp Business',
+  };
+
   static String nameOf(String pkg) {
+    if ((kDemoData || kShotMode) && _demoNames.containsKey(pkg)) return _demoNames[pkg]!;
     for (final a in loaded ?? const <AppInfo>[]) {
       if (a.packageName == pkg) return a.name;
     }

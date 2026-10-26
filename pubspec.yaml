@@ -117,8 +117,9 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-  color: "#0B0B10"
-  image: assets/icon/splash.png
+  # Launch screen: plain peach-pink, the same as the top of the in-app splash (lib/screens/splash.dart).
+  color: "#FEB498"
+  image: assets/icon/splash_blank.png
   android_12:
-    color: "#0B0B10"
-    image: assets/icon/splash.png
+    color: "#FEB498"
+    image: assets/icon/splash_blank.png

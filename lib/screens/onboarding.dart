@@ -7,6 +7,7 @@ import '../services/notification_service.dart';
 import '../services/review_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/accessibility_disclosure.dart';
 import '../widgets/bell_pic.dart';
 import '../widgets/fire.dart';
 import '../widgets/mood_face.dart';
@@ -22,8 +23,15 @@ class Onboarding extends StatefulWidget {
 class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   // Pages: 0 hook, 1 habit question, 2 chart, 3 solution, 4 one mission,
   // 5 daily rhythm, 6 goals, 7 where did you hear, 8 distractions, 9 permissions.
-  static const _count = 10;
-  static const _pHeard = 7;
+  // Pages: 0 hook, 1 habit, 2 chart, 3 solution, 4 one mission, 5 daily time,
+  // 6 with/without table, 7 rhythm, 8 goals, 9 heard, 10 name, 11 distractions, 12 permissions.
+  static const _count = 13;
+  static const _pTime = 5;
+  static const _pGoals = 8;
+  static const _pHeard = 9;
+  static const _pName = 10;
+  double? _dailyHours;
+  final _nameCtl = TextEditingController();
   late int _i = widget.startAt;
   String? _habit;
   String? _heard;
@@ -36,15 +44,25 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   Color get _fg => _light ? AppColors.ink : Colors.white;
 
   Future<void> _next() async {
+    if (_i == _pTime && _dailyHours != null) {
+      await context.read<AppState>().setDailyHours(_dailyHours!);
+    }
     if (_i == _pHeard && _heard != null) {
       await context.read<AppState>().setHeardFrom(_heard!);
       // Ask for a rating once, right after the person told us how they found us.
       if (!kShotMode && mounted) await ReviewService.ask(context, context.read<AppState>());
       if (!mounted) return;
     }
+if (_i == _pName) {      await context.read<AppState>().setUserName(_nameCtl.text.trim());      if (!mounted) return;    }
     if (_i < _count - 1) {
       setState(() => _i++);
     } else {
+      // Last page: if notifications are still off, ask now. Without them the
+      // iPhone flow ("Pray now" notification, "apps unlocked" message) cannot work.
+      if (!await NotificationService.areEnabled()) {
+        await NotificationService.askPermission();
+      }
+      if (!mounted) return;
       _finish();
     }
   }
@@ -129,14 +147,18 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       'Continue',
       'That is what I need 💛',
       'Continue',
+      'Show me the difference',
+      'Continue',
       'Build my daily routine',
+      'Continue',
       'Continue',
       'Continue',
       _blockAll ? 'Set up my focus 🔒' : 'Continue',
       'Continue to my plan',
     ];
     final enabled = !(_i == 1 && _habit == null) &&
-        !(_i == 6 && _goals.isEmpty) &&
+        !(_i == _pGoals && _goals.isEmpty) &&
+        !(_i == _pTime && _dailyHours == null) &&
         !(_i == _pHeard && _heard == null);
     return FilledButton(
       style: FilledButton.styleFrom(
@@ -170,17 +192,154 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       case 4:
         return _mission();
       case 5:
-        return _rhythm();
+        return _timePage();
       case 6:
-        return _focus();
+        return _comparePage();
       case 7:
-        return _heardPage();
+        return _rhythm();
       case 8:
+        return _focus();
+      case 9:
+        return _heardPage();
+      case 10:
+        return _namePage();
+      case 11:
         return _distractions();
       default:
         return _permissions();
     }
   }
+
+  // 5. how much time on distracting apps (question)
+  Widget _timePage() {
+    const options = [
+      ('📵', 'Under 1 hour', 0.75),
+      ('📱', '1 to 2 hours', 1.5),
+      ('😬', '3 to 4 hours', 3.5),
+      ('🫠', '5 hours or more', 5.5),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('How much time do you spend on distracting apps each day?', style: h(30, color: _fg)),
+        const SizedBox(height: 8),
+        Text('Social media, videos, games. A rough guess is fine.',
+            style: h(16, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
+        const SizedBox(height: 24),
+        for (final o in options)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: PastelCard(
+              color: _dailyHours == o.$3 ? AppColors.ink : Colors.white,
+              onTap: () => setState(() => _dailyHours = o.$3),
+              child: Row(children: [
+                Text(o.$1, style: const TextStyle(fontSize: 30)),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(o.$2,
+                      style: h(20, color: _dailyHours == o.$3 ? Colors.white : AppColors.ink)),
+                ),
+                if (_dailyHours == o.$3) const Icon(Icons.check_circle, color: AppColors.mint),
+              ]),
+            ),
+          ),
+      ],
+    );
+  }
+
+  // 6. comparison table: your time without and with Prayer Lock
+  Widget _comparePage() {
+    final h0 = _dailyHours ?? 3.5;
+    const cut = 0.3; // the goal: 30% less
+    final daysNow = h0 * 365 / 24;
+    final daysGoal = daysNow * (1 - cut);
+    final saved = daysNow - daysGoal;
+
+    Widget cell(String t, {required bool good}) => Expanded(
+          child: Container(
+            margin: const EdgeInsets.all(3),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: good ? const Color(0xFFE3F7EA) : const Color(0xFFF1EDEA),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(children: [
+              Icon(good ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                  size: 18, color: good ? const Color(0xFF2FB36A) : const Color(0xFFE5484D)),
+              const SizedBox(width: 6),
+              Expanded(child: Text(t, style: h(12.5, w: FontWeight.w600))),
+            ]),
+          ),
+        );
+    Widget row(String label, String without, String withPl) => Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 10, 4, 2),
+              child: Text(label, style: h(13, color: AppColors.soft, w: FontWeight.w700)),
+            ),
+            IntrinsicHeight(
+              child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                cell(without, good: false),
+                cell(withPl, good: true),
+              ]),
+            ),
+          ],
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Your time, with and without Prayer Lock', style: h(28, color: _fg)),
+        const SizedBox(height: 14),
+        Container(
+          padding: const EdgeInsets.fromLTRB(10, 12, 10, 14),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(26)),
+          child: Column(children: [
+            Row(children: [
+              Expanded(child: Center(child: Text('Without', style: h(15, color: AppColors.soft)))),
+              Expanded(child: Center(child: Text('With Prayer Lock', style: h(15)))),
+            ]),
+            row('Opening an app', 'On autopilot, again and again', 'A pause to pray, then you choose'),
+            row('First and last minutes of the day', 'Scrolling', 'A prayer with Jesus'),
+            row('Time with God', 'Whenever there is time. Often none', 'Morning, night and at every pause'),
+            row('Per year on these apps', '${daysNow.round()} full days', 'About ${daysGoal.round()} days (goal: 30% less)'),
+            const SizedBox(height: 14),
+            _yearBar('Without', daysNow, daysNow, const Color(0xFFD9CFC4)),
+            const SizedBox(height: 8),
+            _yearBar('With Prayer Lock', daysGoal, daysNow, const Color(0xFF3CC85F)),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        Text(
+            'That is about ${saved.round()} days a year to give to prayer, rest and the people you love. It is a goal based on what you told us, not a promise.',
+            textAlign: TextAlign.center,
+            style: h(14, color: _fg.withValues(alpha: 0.75), w: FontWeight.w600)),
+      ],
+    );
+  }
+
+  Widget _yearBar(String label, double days, double max, Color color) => Row(children: [
+        SizedBox(width: 112, child: Text(label, style: h(12.5, w: FontWeight.w700))),
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: days / max),
+              duration: const Duration(milliseconds: 1100),
+              curve: Curves.easeOutCubic,
+              builder: (context, v, _) => LinearProgressIndicator(
+                value: v,
+                minHeight: 16,
+                backgroundColor: const Color(0xFFF1E4D6),
+                color: color,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text('${days.round()} d', style: h(13)),
+      ]);
 
   // 3. bar chart: with and without Prayer Lock
   Widget _chart() => Column(
@@ -367,6 +526,34 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
     );
   }
 
+
+  // 9. name
+  Widget _namePage() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('What should we call you?', style: h(30, color: _fg)),
+          const SizedBox(height: 10),
+          Text('So Prayer Lock can greet you by name. You can skip this.',
+              style: h(16, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500)),
+          const SizedBox(height: 22),
+          TextField(
+            controller: _nameCtl,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.done,
+            maxLength: 30,
+            style: h(20),
+            decoration: InputDecoration(
+              hintText: 'Your first name',
+              filled: true,
+              fillColor: Colors.white,
+              counterText: '',
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(26), borderSide: BorderSide.none),
+            ),
+          ),
+        ],
+      );
   // 8. where did you hear about us
   Widget _heardPage() {
     const options = [
@@ -432,6 +619,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _nameCtl.dispose();
     super.dispose();
   }
 
@@ -522,7 +710,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
                   'Why: to notice when you open an app YOU chose to lock, so we can show your prayer first. Android asks you to turn on Prayer Lock in Accessibility. We never read your screen, messages or passwords, and we share nothing.',
               ok: _a11yOk,
               action: 'Open Accessibility settings',
-              onTap: BlockerService.requestPermission,
+              onTap: () => askAccessibility(context),
             )
           else
             _permCard(
