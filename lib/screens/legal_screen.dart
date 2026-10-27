@@ -116,16 +116,7 @@ class SupportScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(22),
           children: [
-            Center(
-              child: Container(
-                width: 92,
-                height: 92,
-                alignment: Alignment.center,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: const Pic('logo', size: 68),
-              ),
-            ),
-            const SizedBox(height: 14),
+
             Center(child: Text('Prayer Lock', style: h(26))),
             Center(
               child: Text('by $kDeveloperName',

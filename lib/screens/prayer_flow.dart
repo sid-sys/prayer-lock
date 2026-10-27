@@ -24,7 +24,10 @@ class PrayerFlow extends StatefulWidget {
 
   /// Package of the locked app the user wanted. Opened after the prayer.
   final String? openAfter;
-  const PrayerFlow({super.key, this.kind = 'gate', this.openAfter});
+
+  /// Screenshot mode only: 'loading' or 'prayer' opens that step with sample text.
+  final String? shot;
+  const PrayerFlow({super.key, this.kind = 'gate', this.openAfter, this.shot});
   @override
   State<PrayerFlow> createState() => _PrayerFlowState();
 }
@@ -53,6 +56,12 @@ class _PrayerFlowState extends State<PrayerFlow>
   void initState() {
     super.initState();
     _minutes = context.read<AppState>().scheduleMinutes;
+    if (widget.shot == 'loading') _step = _Step.prayer;
+    if (widget.shot == 'prayer') {
+      _step = _Step.prayer;
+      _prayer = PrayerService.sample;
+      _ring.value = 1;
+    }
   }
 
   Future<void> _loadPrayer() async {
@@ -356,49 +365,26 @@ class _PrayerFlowState extends State<PrayerFlow>
                         textAlign: TextAlign.center,
                         style: serif(20),
                       ),
-                      const SizedBox(height: 22),
-                      // The verse of the day, under every prayer.
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(22),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.gold.withValues(alpha: 0.35),
-                              blurRadius: 18,
-                              offset: const Offset(0, 6),
-                            ),
-                          ],
+                      const SizedBox(height: 20),
+                      // The verse of the day flows on from the prayer, in the same writing.
+                      Text(
+                        '✦',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.gold.withValues(alpha: 0.9),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '📖 verse of the day',
-                              style: h(
-                                14,
-                                color: AppColors.gold,
-                                w: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '"${v.text}"',
-                              style: serif(16, color: AppColors.ink),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              v.ref,
-                              style: h(
-                                13,
-                                color: AppColors.soft,
-                                w: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        '"${v.text}"',
+                        textAlign: TextAlign.center,
+                        style: serif(20).copyWith(fontStyle: FontStyle.italic),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        v.ref,
+                        textAlign: TextAlign.center,
+                        style: serif(15, color: AppColors.soft),
                       ),
                     ],
                   ),

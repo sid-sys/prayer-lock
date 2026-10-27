@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/illustration.dart';
@@ -31,27 +32,34 @@ class InsightsScreen extends StatelessWidget {
     /// Average closeness (0..1) for a day, or null if no prayer.
     double? dayMood(DateTime d) {
       final list = s.history
-          .where((e) => e.date.year == d.year && e.date.month == d.month && e.date.day == d.day)
+          .where(
+            (e) =>
+                e.date.year == d.year &&
+                e.date.month == d.month &&
+                e.date.day == d.day,
+          )
           .toList();
       if (list.isEmpty) return null;
-      final avg = list.map((e) => e.relationship).reduce((a, b) => a + b) / list.length;
+      final avg =
+          list.map((e) => e.relationship).reduce((a, b) => a + b) / list.length;
       return (avg - 1) / 4;
     }
 
     final recent = s.history.reversed.take(10).toList();
     final avgAll = s.history.isEmpty
         ? null
-        : (s.history.map((e) => e.relationship).reduce((a, b) => a + b) / s.history.length - 1) / 4;
+        : (s.history.map((e) => e.relationship).reduce((a, b) => a + b) /
+                      s.history.length -
+                  1) /
+              4;
 
     return ListView(
-      controller: scrollTo > 0 ? ScrollController(initialScrollOffset: scrollTo) : null,
+      controller: scrollTo > 0
+          ? ScrollController(initialScrollOffset: scrollTo)
+          : null,
       padding: const EdgeInsets.all(20),
       children: [
-        Center(
-          child: const Pic('logo', size: 96),
-        ),
-        const SizedBox(height: 10),
-        Center(child: Text(name, style: h(20))),
+        Center(child: Text(name, style: h(22))),
         const SizedBox(height: 18),
 
         // Digital wellbeing and spiritual growth
@@ -76,15 +84,18 @@ class InsightsScreen extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 6, bottom: 14),
-                child: Text('How close you felt this week',
-                    style: h(15, color: AppColors.soft, w: FontWeight.w600)),
+                child: Text(
+                  'How close you felt this week',
+                  style: h(15, color: AppColors.soft, w: FontWeight.w600),
+                ),
               ),
               SizedBox(
                 height: 190,
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    for (final d in week) Expanded(child: _bar(d, dayMood(d), d == today)),
+                    for (final d in week)
+                      Expanded(child: _bar(d, dayMood(d), d == today)),
                   ],
                 ),
               ),
@@ -93,19 +104,26 @@ class InsightsScreen extends StatelessWidget {
         ),
         const SizedBox(height: 14),
 
-        Row(children: [
-          _tile('Streak', '${s.streak}', '🔥'),
-          const SizedBox(width: 10),
-          _tile('Prayers', '${s.totalPrayers}', '🙏'),
-          const SizedBox(width: 10),
-          _tile('Avg closeness', avgAll == null ? '-' : moodWord(avgAll), '💛'),
-        ]),
+        Row(
+          children: [
+            _tile('Streak', '${s.streak}', '🔥'),
+            const SizedBox(width: 10),
+            _tile('Prayers', '${s.totalPrayers}', '🙏'),
+            const SizedBox(width: 10),
+            _tile(
+              'Avg closeness',
+              avgAll == null ? '-' : moodWord(avgAll),
+              '💛',
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6),
           child: Text(
-              'Closeness is your answer to "How is your relationship with God today?" It goes from Distant to Very close. This is the average of all your answers.',
-              style: h(12, color: AppColors.soft, w: FontWeight.w500)),
+            'Closeness is your answer to "How is your relationship with God today?" It goes from Distant to Very close. This is the average of all your answers.',
+            style: h(12, color: AppColors.soft, w: FontWeight.w500),
+          ),
         ),
         const SizedBox(height: 22),
 
@@ -125,11 +143,15 @@ class InsightsScreen extends StatelessWidget {
         if (recent.isEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(children: [
-              const Illustration('journal', height: 150),
-              Text('No prayers yet. Your first one will show here.',
-                  style: h(14, color: AppColors.soft, w: FontWeight.w500)),
-            ]),
+            child: Column(
+              children: [
+                const Illustration('journal', height: 150),
+                Text(
+                  'No prayers yet. Your first one will show here.',
+                  style: h(14, color: AppColors.soft, w: FontWeight.w500),
+                ),
+              ],
+            ),
           ),
         for (final e in recent) PrayerTile(e),
         if (s.history.length > recent.length)
@@ -140,11 +162,18 @@ class InsightsScreen extends StatelessWidget {
                 minimumSize: const Size.fromHeight(52),
                 foregroundColor: AppColors.ink,
                 side: const BorderSide(color: AppColors.ink, width: 2),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(26),
+                ),
               ),
               onPressed: () => Navigator.push(
-                  context, MaterialPageRoute(builder: (_) => const PrayerHistoryScreen())),
-              child: Text('Show more (${s.history.length - recent.length} older)', style: h(16)),
+                context,
+                MaterialPageRoute(builder: (_) => const PrayerHistoryScreen()),
+              ),
+              child: Text(
+                'Show more (${s.history.length - recent.length} older)',
+                style: h(16),
+              ),
             ),
           ),
       ],
@@ -175,31 +204,43 @@ class InsightsScreen extends StatelessWidget {
                 )
               : const Padding(
                   padding: EdgeInsets.only(top: 7),
-                  child: Text('·', style: TextStyle(color: Color(0xFFBFA68E), fontSize: 18)),
+                  child: Text(
+                    '·',
+                    style: TextStyle(color: Color(0xFFBFA68E), fontSize: 18),
+                  ),
                 ),
         ),
         const SizedBox(height: 8),
-        Text(DateFormat.E().format(d),
-            style: h(12,
-                color: isToday ? AppColors.ink : AppColors.soft,
-                w: isToday ? FontWeight.w800 : FontWeight.w500)),
+        Text(
+          DateFormat.E().format(d),
+          style: h(
+            12,
+            color: isToday ? AppColors.ink : AppColors.soft,
+            w: isToday ? FontWeight.w800 : FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
 
   Widget _tile(String label, String value, String emoji) => Expanded(
-        child: Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            child: Column(children: [
-              Text(emoji, style: const TextStyle(fontSize: 24)),
-              const SizedBox(height: 4),
-              FittedBox(child: Text(value, style: h(20))),
-              Text(label, style: h(12, color: AppColors.soft, w: FontWeight.w500)),
-            ]),
-          ),
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+        child: Column(
+          children: [
+            Text(emoji, style: const TextStyle(fontSize: 24)),
+            const SizedBox(height: 4),
+            FittedBox(child: Text(value, style: h(20))),
+            Text(
+              label,
+              style: h(12, color: AppColors.soft, w: FontWeight.w500),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 }
 
 /// Small round face for the top of each bar. Mouth and color follow the mood.
@@ -219,19 +260,34 @@ class _MiniFacePainter extends CustomPainter {
     final r = s.width / 2;
     c.drawCircle(Offset(r, r), r, Paint()..color = levelColor(t));
     final ink = Paint()..color = const Color(0xFF14141C);
-    c.drawOval(Rect.fromCenter(center: Offset(r * 0.68, r * 0.82), width: r * 0.26, height: r * 0.38), ink);
-    c.drawOval(Rect.fromCenter(center: Offset(r * 1.32, r * 0.82), width: r * 0.26, height: r * 0.38), ink);
+    c.drawOval(
+      Rect.fromCenter(
+        center: Offset(r * 0.68, r * 0.82),
+        width: r * 0.26,
+        height: r * 0.38,
+      ),
+      ink,
+    );
+    c.drawOval(
+      Rect.fromCenter(
+        center: Offset(r * 1.32, r * 0.82),
+        width: r * 0.26,
+        height: r * 0.38,
+      ),
+      ink,
+    );
     final bend = (t - 0.5) * 2;
     final path = Path()
       ..moveTo(r * 0.62, r * 1.38)
       ..quadraticBezierTo(r, r * 1.38 + bend * r * 0.42, r * 1.38, r * 1.38);
     c.drawPath(
-        path,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeCap = StrokeCap.round
-          ..strokeWidth = 1.8
-          ..color = const Color(0xFF14141C));
+      path,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 1.8
+        ..color = const Color(0xFF14141C),
+    );
   }
 
   @override

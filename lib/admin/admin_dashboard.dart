@@ -54,8 +54,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
         title: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Pic('logo', size: 28),
-            const SizedBox(width: 8),
             Text('Admin panel', style: h(20)),
           ],
         ),

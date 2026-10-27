@@ -102,6 +102,8 @@ jobs:
           shoot paywall
           shoot home
           shoot prayer
+          shoot loader
+          shoot joy
           shoot streak
           shoot badges
           shoot locked
@@ -111,6 +113,33 @@ jobs:
           shoot admin
 
           ls -la screenshots
+
+      - name: Record the animations (video)
+        run: |
+          set -uo pipefail
+          UDID="${{ steps.sim.outputs.udid }}"
+          APP="com.coreinteractive.prayerLock"
+          mkdir -p screenshots
+          show () { echo "$1" > /tmp/prayerlock_shot.txt; sleep "$2"; }
+          # start the film, then walk through the screens that move
+          xcrun simctl io "$UDID" recordVideo --codec=h264 --force screenshots/animations.mov &
+          REC=$!
+          sleep 3
+          show onboarding_0 4
+          show onboarding_2 4
+          show compare 5
+          show loader 8
+          show prayer 5
+          show joy 7
+          show streak 7
+          show home 4
+          show insights_a 5
+          show insights_b 5
+          show insights_c 5
+          show reminder 4
+          kill -INT $REC || true
+          wait $REC || true
+          ls -la screenshots/animations.mov
 
       - name: Save app log (helps when a picture looks wrong)
         if: always()

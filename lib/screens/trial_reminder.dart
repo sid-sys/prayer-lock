@@ -49,9 +49,7 @@ class _TrialReminderScreenState extends State<TrialReminderScreen> {
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
                 child: Column(
                   children: [
-                    const SizedBox(height: 16),
-                    const Pic('logo', size: 64),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 28),
                     Text(
                       "We'll send you a reminder before your trial ends",
                       textAlign: TextAlign.center,

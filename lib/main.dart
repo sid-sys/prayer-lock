@@ -17,6 +17,8 @@ import 'screens/prayer_flow.dart';
 import 'screens/onboarding.dart';
 import 'screens/paywall.dart';
 import 'screens/shell.dart';
+import 'widgets/app_background.dart';
+import 'widgets/girl_anim.dart';
 import 'screens/splash.dart';
 import 'screens/trial_reminder.dart';
 import 'services/review_service.dart';
@@ -86,7 +88,14 @@ Widget _shotScreen() {
     case 'paywall':
       return const Paywall();
     case 'prayer':
-      return const PrayerFlow(kind: 'gate');
+      return const PrayerFlow(kind: 'gate', shot: 'prayer');
+    case 'loader':
+      return const PrayerFlow(kind: 'gate', shot: 'loading');
+    case 'joy':
+      return const AppBackground(
+          child: Scaffold(
+              backgroundColor: Colors.transparent,
+              body: Center(child: GirlAnim(kind: 'joy', size: 240, ms: 190))));
     case 'insights':
       return const Shell(initialIndex: 1);
     case 'locked':

@@ -215,3 +215,5 @@ foreach ($k in $map.Keys) { Copy-Item (Join-Path $out ($map[$k] + '.png')) (Join
 Write-Host 'clouds strip and old names done'
 
 
+
+# NOTE: assets\img\bg_sky.png was composed by hand: bg_paywall.png with clouds from bg_commit.png (rows 606+) laid over the girl from y=455, top 45 px faded in.

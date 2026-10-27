@@ -22,6 +22,10 @@ class PrayerService {
     ('🧭', 'Lost'),
   ];
 
+  /// Sample prayer for screenshots.
+  static const sample =
+      'Dear God, today I feel grateful. I give this moment to You. I am weak, but You are strong. Give me the strength to put You first, to say no to what pulls me away, and to use my time with purpose. Thank You for Your love. Amen.';
+
   static Future<String> generate(int relationship, String feeling, String kind) async {
     try {
       final res = await FirebaseFunctions.instance
