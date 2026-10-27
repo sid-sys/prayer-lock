@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:in_app_review/in_app_review.dart';
+
 import '../config.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
@@ -70,8 +71,17 @@ class _ReviewSheetState extends State<_ReviewSheet> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Pic('logo', size: 64),
-            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(22),
+              child: Image.asset(
+                'assets/img/bg_thanks.png',
+                height: 170,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                alignment: Alignment.bottomCenter,
+              ),
+            ),
+            const SizedBox(height: 12),
             Text('Enjoying Prayer Lock?', style: h(24)),
             const SizedBox(height: 6),
             Text(
@@ -89,8 +99,12 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     onPressed: () => setState(() => _stars = i),
                     icon: Icon(
-                      i <= _stars ? Icons.star_rounded : Icons.star_outline_rounded,
-                      color: i <= _stars ? const Color(0xFFFFB400) : Colors.black38,
+                      i <= _stars
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      color: i <= _stars
+                          ? const Color(0xFFFFB400)
+                          : Colors.black38,
                     ),
                   ),
               ],
@@ -104,7 +118,9 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                       minimumSize: const Size.fromHeight(52),
                       foregroundColor: AppColors.ink,
                       side: const BorderSide(color: Colors.black26),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(26)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(26),
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context, 0),
                     child: const Text('Not now'),
@@ -113,8 +129,12 @@ class _ReviewSheetState extends State<_ReviewSheet> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                    onPressed: _stars == 0 ? null : () => Navigator.pop(context, _stars),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                    ),
+                    onPressed: _stars == 0
+                        ? null
+                        : () => Navigator.pop(context, _stars),
                     child: const Text('Submit'),
                   ),
                 ),

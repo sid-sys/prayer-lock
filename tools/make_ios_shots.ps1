@@ -45,7 +45,7 @@ foreach ($s in $shots) {
   $src = Join-Path $InDir $s[0]
   if (-not (Test-Path $src)) { Write-Host "missing $src"; continue }
   $shot = [System.Drawing.Image]::FromFile($src)
-  $bmp = New-Object System.Drawing.Bitmap $W, $H
+  $bmp = New-Object System.Drawing.Bitmap $W, $H, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'; $g.InterpolationMode = 'HighQualityBicubic'
   $g.TextRenderingHint = 'AntiAliasGridFit'; $g.PixelOffsetMode = 'HighQuality'
@@ -85,4 +85,5 @@ foreach ($s in $shots) {
   Write-Host "saved $name ($W x $H)"
   $g.Dispose(); $bmp.Dispose(); $shot.Dispose()
 }
+
 

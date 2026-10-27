@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
+import '../widgets/illustration.dart';
 import '../widgets/insight_charts.dart';
 import 'prayer_history.dart';
 import '../widgets/mood_face.dart';
@@ -124,8 +125,11 @@ class InsightsScreen extends StatelessWidget {
         if (recent.isEmpty)
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text('No prayers yet. Your first one will show here.',
-                style: h(14, color: AppColors.soft, w: FontWeight.w500)),
+            child: Column(children: [
+              const Illustration('journal', height: 150),
+              Text('No prayers yet. Your first one will show here.',
+                  style: h(14, color: AppColors.soft, w: FontWeight.w500)),
+            ]),
           ),
         for (final e in recent) PrayerTile(e),
         if (s.history.length > recent.length)

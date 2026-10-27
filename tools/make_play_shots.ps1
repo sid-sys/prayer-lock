@@ -1,4 +1,4 @@
-# Makes the Google Play phone screenshots: 1080 x 1920 PNG (9:16).
+﻿# Makes the Google Play phone screenshots: 1080 x 1920 PNG (9:16).
 # Orange background, a caption, and a real app screenshot inside a phone frame.
 # Run:  powershell -File tools\make_play_shots.ps1
 # Input: PNG screenshots taken on a phone (720 x 1612). Output: store\play\01_*.png ...
@@ -47,7 +47,7 @@ foreach ($s in $shots) {
   if (-not (Test-Path $src)) { Write-Host "missing $src"; continue }
   $shot = [System.Drawing.Image]::FromFile($src)
 
-  $bmp = New-Object System.Drawing.Bitmap $W, $H
+  $bmp = New-Object System.Drawing.Bitmap $W, $H, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
   $g = [System.Drawing.Graphics]::FromImage($bmp)
   $g.SmoothingMode = 'AntiAlias'
   $g.InterpolationMode = 'HighQualityBicubic'
@@ -105,3 +105,4 @@ foreach ($s in $shots) {
   Write-Host "saved $name"
   $g.Dispose(); $bmp.Dispose(); $shot.Dispose()
 }
+

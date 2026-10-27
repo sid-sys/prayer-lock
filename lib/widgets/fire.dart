@@ -30,7 +30,11 @@ class _AnimatedFireState extends State<AnimatedFire> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     final size = widget.size;
-    final emoji = Text('🔥', style: TextStyle(fontSize: size, height: 1.3));
+    final emoji = SizedBox(
+      width: size * 1.1,
+      height: size * 1.3,
+      child: Image.asset('assets/img/ic_flame.png', fit: BoxFit.contain, filterQuality: FilterQuality.high),
+    );
     return SizedBox(
       width: size * 1.7,
       height: size * 1.75,

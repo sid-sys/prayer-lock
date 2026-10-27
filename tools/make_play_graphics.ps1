@@ -1,4 +1,4 @@
-# Makes the Google Play graphics from the brand sheet:
+﻿# Makes the Google Play graphics from the brand sheet:
 #   store\play\feature_graphic_1024x500.png   (featured image)
 #   store\play\app_icon_512.png               (app icon for the store listing)
 # Run:  powershell -File tools\make_play_graphics.ps1
@@ -19,7 +19,7 @@ $i512.Save((Join-Path $out 'app_icon_512.png'), [System.Drawing.Imaging.ImageFor
 
 # ---- feature graphic 1024 x 500 ----
 $W = 1024; $H = 500
-$b = New-Object System.Drawing.Bitmap $W, $H
+$b = New-Object System.Drawing.Bitmap $W, $H, ([System.Drawing.Imaging.PixelFormat]::Format24bppRgb)
 $g = [System.Drawing.Graphics]::FromImage($b)
 $g.InterpolationMode = 'HighQualityBicubic'; $g.SmoothingMode = 'AntiAlias'
 $g.TextRenderingHint = 'AntiAliasGridFit'; $g.PixelOffsetMode = 'HighQuality'
@@ -49,3 +49,4 @@ $g.DrawString("Pray first. Then scroll.", $f2, $ink, 46, 358)
 $b.Save((Join-Path $out 'feature_graphic_1024x500.png'), [System.Drawing.Imaging.ImageFormat]::Png)
 $g.Dispose(); $b.Dispose(); $icon.Dispose(); $i512.Dispose(); $sheet.Dispose()
 Write-Host 'saved feature_graphic_1024x500.png and app_icon_512.png'
+

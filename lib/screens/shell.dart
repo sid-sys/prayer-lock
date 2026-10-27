@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import '../theme.dart';
+import '../widgets/app_background.dart';
 import 'home_screen.dart';
 import 'insights_screen.dart';
 import 'locked_apps_screen.dart';
@@ -23,17 +25,24 @@ class _ShellState extends State<Shell> {
     SettingsScreen(),
   ];
 
+  // (idle icon, selected icon, label)
   static const _items = [
-    ('nav_home', 'Home'),
-    ('nav_insights', 'Insights'),
-    ('nav_locked', 'Locked apps'),
-    ('nav_profile', 'Profile'),
+    ('ic_home', 'ic_home_on', 'Home'),
+    ('ic_insights', 'ic_insights_on', 'Insights'),
+    ('ic_apps', 'ic_apps_on', 'Locked apps'),
+    ('ic_profile', 'ic_profile_on', 'Profile'),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(child: IndexedStack(index: _i, children: _pages)),
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      body: AppBackground(
+        child: SafeArea(
+          child: IndexedStack(index: _i, children: _pages),
+        ),
+      ),
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: AppColors.card,
@@ -52,18 +61,26 @@ class _ShellState extends State<Shell> {
                       onTap: () => setState(() => _i = k),
                       child: AnimatedOpacity(
                         duration: const Duration(milliseconds: 200),
-                        opacity: _i == k ? 1 : 0.45,
+                        opacity: _i == k ? 1 : 0.75,
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             AnimatedScale(
                               duration: const Duration(milliseconds: 200),
                               scale: _i == k ? 1.15 : 0.95,
-                              child: Pic(_items[k].$1, size: 38),
+                              child: Pic(
+                                _i == k ? _items[k].$2 : _items[k].$1,
+                                size: 40,
+                              ),
                             ),
                             const SizedBox(height: 2),
-                            Text(_items[k].$2,
-                                style: h(12, w: _i == k ? FontWeight.w800 : FontWeight.w500)),
+                            Text(
+                              _items[k].$3,
+                              style: h(
+                                12,
+                                w: _i == k ? FontWeight.w800 : FontWeight.w500,
+                              ),
+                            ),
                           ],
                         ),
                       ),
