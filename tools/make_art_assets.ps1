@@ -95,6 +95,45 @@ public static class Slicer {
     return new Rectangle(minx, miny, maxx - minx + 1, maxy - miny + 1);
   }
 
+  // Remove small stray pieces (parts of the neighbour picture that reach into this cell).
+  // Keeps every blob that is at least 18% of the biggest blob (blobs closer than 8 px count as one).
+  public static void KeepMain(Bitmap b) {
+    int w = b.Width, h = b.Height; Rectangle r = new Rectangle(0, 0, w, h);
+    BitmapData d = b.LockBits(r, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+    byte[] px = new byte[d.Stride * h];
+    System.Runtime.InteropServices.Marshal.Copy(d.Scan0, px, 0, px.Length);
+    int s = d.Stride; int R = 8;
+    bool[] on = new bool[w * h];
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) on[y * w + x] = px[y * s + x * 4 + 3] > 10;
+    // dilate by R (box)
+    bool[] dil = new bool[w * h];
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) if (on[y * w + x]) {
+      int y0 = Math.Max(0, y - R), y1 = Math.Min(h - 1, y + R), x0 = Math.Max(0, x - R), x1 = Math.Min(w - 1, x + R);
+      for (int yy = y0; yy <= y1; yy++) for (int xx = x0; xx <= x1; xx++) dil[yy * w + xx] = true;
+    }
+    int[] label = new int[w * h]; int n = 0; List<int> area = new List<int>();
+    Stack<int> st = new Stack<int>();
+    for (int p0 = 0; p0 < w * h; p0++) {
+      if (!dil[p0] || label[p0] != 0) continue;
+      n++; int a = 0; label[p0] = n; st.Push(p0);
+      while (st.Count > 0) {
+        int p = st.Pop(); int x = p % w, y = p / w; if (on[p]) a++;
+        if (x > 0 && dil[p - 1] && label[p - 1] == 0) { label[p - 1] = n; st.Push(p - 1); }
+        if (x < w - 1 && dil[p + 1] && label[p + 1] == 0) { label[p + 1] = n; st.Push(p + 1); }
+        if (y > 0 && dil[p - w] && label[p - w] == 0) { label[p - w] = n; st.Push(p - w); }
+        if (y < h - 1 && dil[p + w] && label[p + w] == 0) { label[p + w] = n; st.Push(p + w); }
+      }
+      area.Add(a);
+    }
+    int big = 0; foreach (int a in area) if (a > big) big = a;
+    for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
+      int l = label[y * w + x];
+      if (l == 0 || area[l - 1] < big * 0.18) { int i = y * s + x * 4; px[i] = 0; px[i + 1] = 0; px[i + 2] = 0; px[i + 3] = 0; }
+    }
+    System.Runtime.InteropServices.Marshal.Copy(px, 0, d.Scan0, px.Length);
+    b.UnlockBits(d);
+  }
+
   // Trim to content, pad, optionally centre on a square canvas.
   public static Bitmap Finish(Bitmap b, int pad, bool square) {
     Rectangle bb = Bounds(b);
@@ -116,7 +155,7 @@ $out = Join-Path $root 'assets\img'
 
 function Even($start, $end, $n) { $a = @(); for ($i = 0; $i -le $n; $i++) { $a += [int]($start + ($end - $start) * $i / $n) }; return $a }
 
-function Cut-Grid($sheetName, $xs, $ys, $names, [bool]$key, [int]$t1, [int]$inset, [bool]$trim, [bool]$square, [int]$pad) {
+function Cut-Grid($sheetName, $xs, $ys, $names, [bool]$key, [int]$t1, [int]$inset, [bool]$trim, [bool]$square, [int]$pad, [bool]$clean = $false) {
   $bmp = [System.Drawing.Bitmap]::FromFile((Join-Path $store $sheetName))
   $k = 0
   for ($r = 0; $r -lt ($ys.Count - 1); $r++) {
@@ -124,6 +163,7 @@ function Cut-Grid($sheetName, $xs, $ys, $names, [bool]$key, [int]$t1, [int]$inse
       $name = $names[$k]; $k++
       if (-not $name) { continue }
       $cell = [Slicer]::CutCell($bmp, $xs[$c] + $inset, $ys[$r] + $inset, $xs[$c + 1] - $inset, $ys[$r + 1] - $inset, $key, $t1)
+      if ($clean) { [Slicer]::KeepMain($cell) }
       if ($trim) { $f = [Slicer]::Finish($cell, $pad, $square); $cell.Dispose(); $cell = $f }
       $cell.Save((Join-Path $out ($name + '.png')), [System.Drawing.Imaging.ImageFormat]::Png)
       $cell.Dispose()
@@ -156,7 +196,8 @@ Cut-Grid 'Kawaii Faith and Joy Sprite Sheet.png' (Even 0 1536 6) (Even 0 1024 3)
 
 # 4. illustrations: 4 x 4
 $il = @('il_wake','il_scroll_bed','il_chart','il_lock_flow','il_apps_to_pray','il_clock','il_scale','il_sun_moon','il_icons_row','il_chat_megaphone','il_hello','il_phone_lock','il_night','il_morning','il_journal','il_goodbye')
-Cut-Grid 'Pastel Faith and Joy Sticker Grid.png' (Even 0 1536 4) (Even 0 1024 4) $il $true 40 8 $true $false 4
+# the pictures do not sit on an even grid, so the cell edges are set by hand
+Cut-Grid 'Pastel Faith and Joy Sticker Grid.png' @(0,395,780,1105,1536) @(0,288,515,750,1024) $il $true 40 8 $true $false 4 $true
 
 # 5. full-screen backgrounds: 2 x 2, white separators cropped away, no keying
 Cut-Grid 'Dreamy Pastel Celebration Panels.png' @(0,512,1024) @(0,768,1536) @('bg_commit','bg_paywall','bg_bell','bg_thanks') $false 0 5 $false $false 0
@@ -172,3 +213,5 @@ $map = @{ 'sun'='ic_sun'; 'moon'='ic_moon'; 'lock'='ic_lock_cross'; 'unlock'='ic
           'nav_home'='ic_home_on'; 'nav_insights'='ic_insights_on'; 'nav_locked'='ic_apps_on'; 'nav_profile'='ic_profile_on' }
 foreach ($k in $map.Keys) { Copy-Item (Join-Path $out ($map[$k] + '.png')) (Join-Path $out ($k + '.png')) -Force }
 Write-Host 'clouds strip and old names done'
+
+

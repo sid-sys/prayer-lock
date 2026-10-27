@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'
+﻿import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -10,7 +10,6 @@ import '../services/review_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/accessibility_disclosure.dart';
-import '../widgets/bell_pic.dart';
 import '../widgets/app_background.dart';
 import '../widgets/illustration.dart';
 
@@ -151,10 +150,10 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
 
   Widget _button() {
     final labels = [
-      'Begin my journey 🙏',
+      'Begin my journey ðŸ™',
       'Continue',
       'Continue',
-      'That is what I need 💛',
+      'That is what I need ðŸ’›',
       'Continue',
       'Show me the difference',
       'Continue',
@@ -162,7 +161,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       'Continue',
       'Continue',
       'Continue',
-      _blockAll ? 'Set up my focus 🔒' : 'Continue',
+      _blockAll ? 'Set up my focus ðŸ”’' : 'Continue',
       'Continue to my plan',
     ];
     final enabled =
@@ -228,10 +227,10 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   // 5. how much time on distracting apps (question)
   Widget _timePage() {
     const options = [
-      ('📵', 'Under 1 hour', 0.75),
-      ('📱', '1 to 2 hours', 1.5),
-      ('😬', '3 to 4 hours', 3.5),
-      ('🫠', '5 hours or more', 5.5),
+      ('ðŸ“µ', 'Under 1 hour', 0.75),
+      ('ðŸ“±', '1 to 2 hours', 1.5),
+      ('ðŸ˜¬', '3 to 4 hours', 3.5),
+      ('ðŸ« ', '5 hours or more', 5.5),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -870,7 +869,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
         const SizedBox(height: 12),
         if (ok)
           Text(
-            'Allowed ✓',
+            'Allowed âœ“',
             style: h(15, color: AppColors.ink, w: FontWeight.w800),
           )
         else
@@ -890,7 +889,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   Widget _permissions() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text('Two quick permissions 🔐', style: h(28, color: _fg)),
+      Text('Two quick permissions ðŸ”', style: h(28, color: _fg)),
       const SizedBox(height: 6),
       Text(
         'So Prayer Lock can do its job. You stay in control and can change them any time in Profile.',
@@ -899,7 +898,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       const SizedBox(height: 16),
       _permCard(
         color: AppColors.blue,
-        icon: const BellPic(size: 56, ring: false),
+        icon: Image.asset('assets/img/ic_bell_ring.png', width: 52, height: 52, filterQuality: FilterQuality.high),
         title: 'Notifications',
         why: 'Why: to remind you at your morning and night prayer times. Your prayers and feelings are never shown in a notification.',
         ok: _notifOk,
@@ -910,7 +909,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       if (defaultTargetPlatform == TargetPlatform.android)
         _permCard(
           color: AppColors.mint,
-          icon: const Text('📵', style: TextStyle(fontSize: 30)),
+          icon: const Text('ðŸ“µ', style: TextStyle(fontSize: 30)),
           title: 'App blocking',
           why: 'Why: to notice when you open an app YOU chose to lock, so we can show your prayer first. Android asks you to turn on Prayer Lock in Accessibility. We never read your screen, messages or passwords, and we share nothing.',
           ok: _a11yOk,
@@ -920,7 +919,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       else
         _permCard(
           color: AppColors.mint,
-          icon: const Text('📵', style: TextStyle(fontSize: 30)),
+          icon: const Text('ðŸ“µ', style: TextStyle(fontSize: 30)),
           title: 'Screen Time access',
           why: 'Why: to cover the apps YOU choose with a "Pray first" screen. Apple keeps your app choices private on your phone. We never see which apps you pick, and we share nothing.',
           ok: _a11yOk,
@@ -948,7 +947,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
         filterQuality: FilterQuality.high,
       ),
       const SizedBox(height: 28),
-      _title('What if you felt closer to Jesus every day? ✨'),
+      _title('What if you felt closer to Jesus every day? âœ¨'),
       _sub(
         'Start your mornings with Him, not with notifications. End your nights in prayer, not endless scrolling.',
       ),
@@ -958,9 +957,9 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   // 2. habit question
   Widget _habitPage() {
     final options = [
-      ('📱', 'Often', 'My phone wins most days', AppColors.blue),
-      ('😅', 'Sometimes', 'I get distracted and forget', AppColors.yellow),
-      ('🌿', 'Rarely', 'I want to feel close to Him again', AppColors.mint),
+      ('ðŸ“±', 'Often', 'My phone wins most days', AppColors.blue),
+      ('ðŸ˜…', 'Sometimes', 'I get distracted and forget', AppColors.yellow),
+      ('ðŸŒ¿', 'Rarely', 'I want to feel close to Him again', AppColors.mint),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -972,7 +971,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
         ),
         const SizedBox(height: 8),
         Text(
-          'No judgment here. Just be honest 🤍',
+          'No judgment here. Just be honest ðŸ¤',
           style: h(16, color: _fg.withValues(alpha: 0.7), w: FontWeight.w500),
         ),
         const SizedBox(height: 28),
@@ -1023,9 +1022,9 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
         filterQuality: FilterQuality.high,
       ),
       const SizedBox(height: 32),
-      _title('Before you scroll, take a moment to pray 🙏'),
+      _title('Before you scroll, take a moment to pray ðŸ™'),
       _sub(
-        'Pick the apps that take your time. When you open one, Prayer Lock opens first. Pray, then continue 💛',
+        'Pick the apps that take your time. When you open one, Prayer Lock opens first. Pray, then continue ðŸ’›',
       ),
     ],
   );
@@ -1035,7 +1034,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       const Illustration('sun_moon', height: 90),
-      Text('Begin with prayer. End with peace. 🌅🌙', style: h(30, color: _fg)),
+      Text('Begin with prayer. End with peace. ðŸŒ…ðŸŒ™', style: h(30, color: _fg)),
       const SizedBox(height: 8),
       Text(
         'Two moments with Jesus every day. Tap to choose your time.',
@@ -1094,7 +1093,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       ),
       const SizedBox(height: 20),
       Text(
-        'We will remind you at these times with a gentle message 🔔',
+        'We will remind you at these times with a gentle message ðŸ””',
         style: h(14, color: _fg.withValues(alpha: 0.6), w: FontWeight.w500),
       ),
     ],
@@ -1103,11 +1102,11 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
   // 5. focus + progress
   Widget _focus() {
     final goals = [
-      ('🔁', 'Praying every day'),
-      ('🕊️', 'Peace of mind'),
-      ('💛', 'Gratitude'),
-      ('🧭', 'Guidance'),
-      ('✝️', 'A closer walk with God'),
+      ('ðŸ”', 'Praying every day'),
+      ('ðŸ•Šï¸', 'Peace of mind'),
+      ('ðŸ’›', 'Gratitude'),
+      ('ðŸ§­', 'Guidance'),
+      ('âœï¸', 'A closer walk with God'),
     ];
     return SingleChildScrollView(
       child: Column(
@@ -1172,7 +1171,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
       const Illustration('phone_lock', height: 120, bottom: 4),
       const SizedBox(height: 16),
       Text(
-        'Give Jesus the attention your phone keeps taking 📵',
+        'Give Jesus the attention your phone keeps taking ðŸ“µ',
         style: h(28, color: _fg),
       ),
       const SizedBox(height: 10),
@@ -1189,7 +1188,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
           onTap: () => setState(() => _blockAll = true),
           child: Row(
             children: [
-              const Text('🔒', style: TextStyle(fontSize: 28)),
+              const Text('ðŸ”’', style: TextStyle(fontSize: 28)),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -1211,7 +1210,7 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
         onTap: () => setState(() => _blockAll = false),
         child: Row(
           children: [
-            const Text('⏳', style: TextStyle(fontSize: 28)),
+            const Text('â³', style: TextStyle(fontSize: 28)),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -1227,3 +1226,4 @@ class _OnboardingState extends State<Onboarding> with WidgetsBindingObserver {
     ],
   );
 }
+
