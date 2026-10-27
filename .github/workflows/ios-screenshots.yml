@@ -103,6 +103,16 @@ jobs:
           shoot home
           shoot prayer
           shoot loader
+          shoot mood
+          shoot mood_low
+          shoot mood_high
+          shoot feeling
+          shoot schedule
+          shoot done
+          shoot auth
+          shoot privacy
+          shoot support
+          shoot ioslocked
           shoot joy
           shoot streak
           shoot badges

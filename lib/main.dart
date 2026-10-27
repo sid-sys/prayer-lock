@@ -17,6 +17,8 @@ import 'screens/prayer_flow.dart';
 import 'screens/onboarding.dart';
 import 'screens/paywall.dart';
 import 'screens/shell.dart';
+import 'screens/ios_locked_apps.dart';
+import 'screens/legal_screen.dart';
 import 'widgets/app_background.dart';
 import 'widgets/girl_anim.dart';
 import 'screens/splash.dart';
@@ -89,6 +91,26 @@ Widget _shotScreen() {
       return const Paywall();
     case 'prayer':
       return const PrayerFlow(kind: 'gate', shot: 'prayer');
+    case 'mood':
+      return const PrayerFlow(kind: 'gate', shot: 'mood');
+    case 'mood_low':
+      return const PrayerFlow(kind: 'gate', shot: 'mood_low');
+    case 'mood_high':
+      return const PrayerFlow(kind: 'gate', shot: 'mood_high');
+    case 'feeling':
+      return const PrayerFlow(kind: 'gate', shot: 'feeling');
+    case 'schedule':
+      return const PrayerFlow(kind: 'gate', shot: 'schedule');
+    case 'done':
+      return const PrayerFlow(kind: 'gate', shot: 'done');
+    case 'auth':
+      return const AuthScreen();
+    case 'privacy':
+      return const LegalScreen(LegalDoc.privacy);
+    case 'support':
+      return const SupportScreen();
+    case 'ioslocked':
+      return const Scaffold(body: SafeArea(child: IosLockedApps()));
     case 'loader':
       return const PrayerFlow(kind: 'gate', shot: 'loading');
     case 'joy':

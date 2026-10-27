@@ -56,6 +56,12 @@ class _PrayerFlowState extends State<PrayerFlow>
   void initState() {
     super.initState();
     _minutes = context.read<AppState>().scheduleMinutes;
+    if (widget.shot == 'mood') _step = _Step.mood;
+    if (widget.shot == 'mood_low') _mood = 0.05;
+    if (widget.shot == 'mood_high') _mood = 0.97;
+    if (widget.shot == 'feeling') _step = _Step.feeling;
+    if (widget.shot == 'schedule') _step = _Step.schedule;
+    if (widget.shot == 'done') _step = _Step.done;
     if (widget.shot == 'loading') _step = _Step.prayer;
     if (widget.shot == 'prayer') {
       _step = _Step.prayer;
