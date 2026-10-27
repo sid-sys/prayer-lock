@@ -9,6 +9,7 @@ import 'admin/admin_dashboard.dart';
 import 'config.dart';
 import 'firebase_options.dart';
 import 'screens/plan_screen.dart';
+import 'screens/insights_screen.dart';
 import 'screens/streak_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/commit_screen.dart';
@@ -64,6 +65,16 @@ Widget _shotScreen() {
       return const Onboarding(startAt: 9);
     case 'onboarding_12':
       return const Onboarding(startAt: 12);
+    case 'lockintro':
+      return const PrayerFlow(kind: 'gate', openAfter: 'ios');
+    case 'insights_a':
+      return const Scaffold(body: SafeArea(child: InsightsScreen(scrollTo: 520)));
+    case 'insights_b':
+      return const Scaffold(body: SafeArea(child: InsightsScreen(scrollTo: 1450)));
+    case 'insights_c':
+      return const Scaffold(body: SafeArea(child: InsightsScreen(scrollTo: 2900)));
+    case 'compare':
+      return const Onboarding(startAt: 6);
     case 'reminder':
       return const TrialReminderScreen();
     case 'commit':
@@ -210,7 +221,7 @@ class _GateState extends State<_Gate> {
   void initState() {
     super.initState();
     if (!kShotMode) {
-      Future<void>.delayed(const Duration(milliseconds: 1600), () {
+      Future<void>.delayed(const Duration(milliseconds: 1000), () {
         if (mounted) setState(() => _splashDone = true);
       });
     }

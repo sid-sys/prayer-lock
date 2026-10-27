@@ -157,8 +157,7 @@ class _PlanScreenState extends State<PlanScreen> {
                     ),
                   ]),
                   const SizedBox(height: 10),
-                  Text('Prayer Lock ${PurchaseService.nameOf(s.plan)}',
-                      style: h(28, color: Colors.white)),
+                  Text(PurchaseService.proName(s.plan), style: h(26, color: Colors.white)),
                   const SizedBox(height: 2),
                   Text(_price(s.plan),
                       style: h(16, color: Colors.white70, w: FontWeight.w500)),
@@ -166,6 +165,29 @@ class _PlanScreenState extends State<PlanScreen> {
                   Text(status, style: h(14, color: Colors.white, w: FontWeight.w500)),
                 ],
               ),
+            ),
+            const SizedBox(height: 16),
+            // What Prayer Lock Pro includes
+            Container(
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(24)),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Prayer Lock Pro includes', style: h(17)),
+                const SizedBox(height: 4),
+                Text(PurchaseService.descriptionOf(s.plan),
+                    style: h(12.5, color: AppColors.soft, w: FontWeight.w500)),
+                const SizedBox(height: 10),
+                for (final b in PurchaseService.proBenefits)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 5),
+                    child: Row(children: [
+                      Text(b.$1, style: const TextStyle(fontSize: 20)),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(b.$2, style: h(14, w: FontWeight.w600))),
+                    ]),
+                  ),
+              ]),
             ),
             const SizedBox(height: 24),
 

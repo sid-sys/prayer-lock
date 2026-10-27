@@ -1,4 +1,4 @@
-name: prayer_lock
+﻿name: prayer_lock
 description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+version: 1.0.0+11
 
 environment:
   sdk: ^3.13.1
@@ -51,6 +51,7 @@ dependencies:
   flutter_timezone: ^5.1.1
   url_launcher: ^6.3.3
   in_app_purchase: ^3.2.3
+  in_app_purchase_android: ^0.5.4
   in_app_review: ^2.0.11
 
 dev_dependencies:
@@ -117,9 +118,10 @@ flutter_launcher_icons:
   remove_alpha_ios: true
 
 flutter_native_splash:
-  # Launch screen: plain peach-pink, the same as the top of the in-app splash (lib/screens/splash.dart).
+  # The phone's own launch screen shows the same picture as the in-app splash
+  # (assets/img/splash_art.png), so there is one continuous splash, not two.
   color: "#FEB498"
-  image: assets/icon/splash_blank.png
+  background_image: assets/img/splash_art.png
   android_12:
     color: "#FEB498"
     image: assets/icon/splash_blank.png

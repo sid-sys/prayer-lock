@@ -64,44 +64,62 @@ Prayer Lock uses Apple's Screen Time tools (Family Controls) to cover the apps y
 Honest note for the reviewer and for users: on iPhone, Apple does not let an app open another app. After you pray, you
 go back to your app yourself. The app says this on screen.
 
-## Google Play (Android)
+## Google Play listing text (emojis, ASO)
 
-| Field | Text | Letters (max) |
-|---|---|---|
-| App name | **Prayer Lock: Bible & Prayer** | 27 (30) |
-| Short description | **Pray first, then scroll. Lock distracting apps until you take a moment with God.** | 80 (80) |
+Title (30 max): `Prayer Lock: Bible & Prayer` (27)
 
-### Full description (Play, max 4000 letters)
+Short description (80 max, 80 used):
 
 ```
-Pray first. Then scroll.
+🙏 Lock distracting apps. Pray first, then scroll. Daily prayer, Bible verses ✝️
+```
 
-Prayer Lock is a Christian prayer app that locks the apps that waste your time until you take a moment to pray.
+Full description (4000 max):
 
-HOW IT WORKS
-• Choose the apps you want to lock (Instagram, TikTok, YouTube, games and more)
-• Open one of them and Prayer Lock opens first
-• Share how you feel and read a short, personal prayer
-• After ten quiet seconds your app opens
+```
+🙏 PRAY FIRST. THEN SCROLL.
 
-WHAT YOU GET
-• Pray-before-you-scroll app lock
-• Short prayers for how you feel today
-• Morning and night prayer with Bible verses
-• Daily streaks and badges
-• Progress report: prayers, pauses and time spent in your locked apps
-• Reminders at the times you choose
-• Your prayers and feelings stay on your phone
+Prayer Lock is a Christian prayer app that helps you put God before your phone. Choose the apps that steal your time. When you open one, Prayer Lock pauses it and asks for one short prayer first. Pray, then carry on with your day. ✝️
 
-FREE TRIAL AND PLANS
+🔒 HOW IT WORKS
+1️⃣ Pick the apps you want to lock: Instagram, TikTok, YouTube, games, anything
+2️⃣ Open one of them. Prayer Lock shows a calm "Pray first" screen
+3️⃣ Tell us how you feel, read a short personal prayer, and take ten quiet seconds with Jesus
+4️⃣ Your apps open. Your day goes on, with God first 💛
+
+✨ WHAT YOU GET
+🙏 A prayer written for how you feel today: grateful, anxious, tired, hopeful, stressed and more
+💪 Prayers that ask God for strength to say no to distractions
+📖 A Bible verse of the day with every prayer
+🌅 Morning prayer and 🌙 night prayer at the times you choose
+🔥 Daily prayer streaks and badges that celebrate faithfulness, not guilt
+📊 Insights: how often each app paused you, how long it stayed open, and your time with and without Prayer Lock
+💛 See how your feelings and closeness to God change over time, with simple animated charts
+🔔 Gentle reminders and a kind "come back" note if you have been away
+🔐 Private by design: your prayers and feelings stay on your phone
+
+👤 WHO IT IS FOR
+Anyone who wants a stronger daily prayer habit, less scrolling, more peace, and a simple way to spend time with Jesus every day.
+
+💎 FREE TRIAL AND PLANS
 Start with a 7 day free trial. Then choose monthly or yearly, or pay once for Lifetime. Cancel any time in Google Play.
 
-ACCESSIBILITY SERVICE (please read)
-To notice when you open an app that YOU chose to lock, Prayer Lock uses Android's Accessibility Service. It only checks which app is in front. It does not read your screen, messages, passwords or anything you type, and it shares nothing. You turn it on yourself in Settings, and you can turn it off at any time.
+⚠️ ACCESSIBILITY SERVICE (please read)
+To notice when you open an app that YOU chose to lock, Prayer Lock uses Android's Accessibility Service. It only checks which app is in front. It does not read your screen, messages, passwords or anything you type, and it shares nothing. You turn it on yourself in Settings and can turn it off at any time.
+
+🕊️ Small moments. Big faith.
 ```
 
-Google Play asks you to declare Accessibility Service use in Play Console (Policy > App content). Use the paragraph above as
-the "prominent disclosure" text. Without it the app can be rejected.
+## Files to upload to Play Console
+
+| What | File (in `D:\SCRATCH\Prayerapp`) | Size |
+|---|---|---|
+| App icon | `store\play\app_icon_512.png` | 512 x 512 |
+| Featured image (feature graphic) | `store\play\feature_graphic_1024x500.png` | 1024 x 500 |
+| Phone screenshots (8) | `store\play\01_pray_before_you_scroll.png` to `08_understand_your_heart.png` | 1080 x 1920 |
+| App bundle | `build\app\outputs\bundle\release\app-release.aab` | |
+| Privacy policy link | `https://prayerlock-core-app.web.app/privacy.html` | |
+| Delete account link | `https://prayerlock-core-app.web.app/delete-account.html` | |
 
 ## Screenshots: where they are
 
@@ -125,6 +143,6 @@ Good order for the store: 1 hook, 2 chart (5x), 3 how it works (one prayer, one 
 - Android package ID: `com.coreinteractive.prayer_lock`
 - Apple Team ID: `W3QA63P2YL`
 - App Group: `group.com.coreinteractive.prayerLock`
-- Store products (same on both stores): `prayerlock_monthly`, `prayerlock_yearly`, `prayerlock_lifetime`
+- Store products (same on both stores): `prayerlock_pro_monthly`, `prayerlock_pro_yearly`, `prayerlock_pro_lifetime`
 
 Name, subtitle and keywords CAN be changed later with a new app version.

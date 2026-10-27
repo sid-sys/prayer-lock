@@ -10,7 +10,9 @@ import '../widgets/mood_face.dart';
 import '../widgets/progress_report.dart';
 
 class InsightsScreen extends StatelessWidget {
-  const InsightsScreen({super.key});
+  /// Start this far down the page (used by screenshot mode).
+  final double scrollTo;
+  const InsightsScreen({super.key, this.scrollTo = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class InsightsScreen extends StatelessWidget {
         : (s.history.map((e) => e.relationship).reduce((a, b) => a + b) / s.history.length - 1) / 4;
 
     return ListView(
+      controller: scrollTo > 0 ? ScrollController(initialScrollOffset: scrollTo) : null,
       padding: const EdgeInsets.all(20),
       children: [
         Center(

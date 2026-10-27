@@ -84,6 +84,7 @@ jobs:
           }
 
           # numbered so they sort in a good order
+          shoot lockintro
           shoot onboarding_0
           shoot onboarding_1
           shoot onboarding_2
@@ -94,6 +95,10 @@ jobs:
           shoot reminder
           shoot commit
           shoot commit_hold
+          shoot compare
+          shoot insights_a
+          shoot insights_b
+          shoot insights_c
           shoot paywall
           shoot home
           shoot prayer

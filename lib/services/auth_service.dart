@@ -34,6 +34,10 @@ class AuthService {
 
   /// Apple sign in is for iPhone. On Android it is only shown in test builds
   /// (see kAppleOnAndroid), so it can be tried without an iPhone.
+  /// Google sign in needs GoogleService-Info.plist on iPhone, which is not set up yet.
+  /// Turn this on for iPhone when it is.
+  static bool get googleAvailable => !Platform.isIOS;
+
   static bool get appleAvailable => Platform.isIOS || (Platform.isAndroid && kAppleOnAndroid);
 
   static Future<void> signInApple() async {

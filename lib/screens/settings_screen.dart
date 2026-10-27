@@ -8,6 +8,7 @@ import '../services/purchase_service.dart';
 import '../state/app_state.dart';
 import '../theme.dart';
 import '../widgets/accessibility_disclosure.dart';
+import 'auth_screen.dart';
 import 'legal_screen.dart';
 import 'onboarding.dart';
 import 'plan_screen.dart';
@@ -234,6 +235,14 @@ class SettingsScreen extends StatelessWidget {
                     subtitle: const Text('The with and without Prayer Lock table'),
                     onTap: () => Navigator.push(
                         context, MaterialPageRoute(builder: (_) => const Onboarding(startAt: 6))),
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Text('🔑', style: TextStyle(fontSize: 22)),
+                    title: const Text('Preview the sign up screen'),
+                    subtitle: const Text('Opens it without signing you out'),
+                    onTap: () => Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => const AuthScreen())),
                   ),
                   ListTile(
                     contentPadding: EdgeInsets.zero,

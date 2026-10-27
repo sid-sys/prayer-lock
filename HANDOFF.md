@@ -26,8 +26,8 @@ Rating sheet (`lib/services/review_service.dart`): stars + Submit counts as a ra
 - Apple Team ID `W3QA63P2YL`, App Group `group.com.coreinteractive.prayerLock`
 - Firebase project `prayerlock-core-app` (Android app id `1:110455972954:android:239c73f3e606dbe98ca463`)
 - App Store Connect app: "Prayer Lock: Christian Habit", app ID `6822556636`
-- Store products (same ID on both stores): `prayerlock_monthly`, `prayerlock_yearly`, `prayerlock_lifetime`
-  (Apple IDs: monthly 6822692195, yearly 6822692169, lifetime 6822692170, group "Prayer Lock Plus")
+- Store products (same ID on both stores): `prayerlock_pro_monthly`, `prayerlock_pro_yearly`, `prayerlock_pro_lifetime`
+  (OLD Apple products with the old IDs `prayerlock_monthly/yearly/lifetime` exist (6822692195, 6822692169, 6822692170). Apple IDs cannot be renamed, so create 3 NEW Apple products with the new IDs.)
 - Prices on Apple: monthly $7.99, yearly $39.99, lifetime $79.99, 7 day free trial on both subscriptions.
 
 ## Build flags

@@ -83,12 +83,26 @@ class _PaywallState extends State<Paywall> {
               children: [
                 Text(
                     _lifetime
-                        ? 'Own Prayer Lock for life 🙏'
-                        : 'Start your 7-day FREE trial to continue 🙏',
+                        ? 'Get Prayer Lock Pro for life 🙏'
+                        : 'Start your 7-day FREE trial of Prayer Lock Pro 🙏',
                     textAlign: TextAlign.center,
                     style: h(27, color: Colors.black)),
-                const SizedBox(height: 18),
-                const Spacer(flex: 2),
+                const SizedBox(height: 12),
+                // What Pro includes (same words as in the stores)
+                for (final b in PurchaseService.proBenefits)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Text(b.$1, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(b.$2,
+                            style: const TextStyle(
+                                fontSize: 14, fontWeight: FontWeight.w600, color: Colors.black87)),
+                      ),
+                    ]),
+                  ),
+                const Spacer(flex: 1),
 
                 // Timeline (kept compact so it is always visible)
                 AnimatedSwitcher(
@@ -98,7 +112,7 @@ class _PaywallState extends State<Paywall> {
                           key: const ValueKey('life'),
                           children: [
                             _step(Icons.all_inclusive, _orange, 'Today',
-                                'Pay once and unlock morning and night prayer, pray-before-you-scroll, streaks and everything new we add.'),
+                                'Pay once and unlock all of Prayer Lock Pro, plus everything new we add.'),
                             _step(Icons.verified_outlined, Colors.black, 'Forever',
                                 'No free trial. No renewals. No surprise charges.',
                                 last: true),
@@ -108,7 +122,7 @@ class _PaywallState extends State<Paywall> {
                           key: const ValueKey('trial'),
                           children: [
                             _step(Icons.lock_open, _orange, 'Today',
-                                'Unlock morning and night prayer, pray-before-you-scroll, streaks and more.'),
+                                'Unlock all of Prayer Lock Pro.'),
                             _step(Icons.notifications_active_outlined, _orange,
                                 'In 5 Days - Reminder',
                                 "We'll remind you that your trial is ending soon, if you've allowed notifications."),
@@ -125,20 +139,20 @@ class _PaywallState extends State<Paywall> {
                 _planCard(
                   id: 'yearly',
                   banner: '7 DAYS FREE',
-                  title: 'Yearly · save ${PurchaseService.savePercent}%',
+                  title: 'Pro Yearly · save ${PurchaseService.savePercent}%',
                   price: '${PurchaseService.yearlyPerMonth}/mo',
                   sub: '${PurchaseService.yearlyPrice} billed annually',
                 ),
                 const SizedBox(height: 10),
                 _planCard(
                   id: 'monthly',
-                  title: 'Monthly',
+                  title: 'Pro Monthly',
                   price: '${PurchaseService.monthlyPrice}/mo',
                 ),
                 const SizedBox(height: 10),
                 _planCard(
                   id: 'lifetime',
-                  title: '💎 Lifetime',
+                  title: '💎 Pro Lifetime',
                   price: PurchaseService.lifetimePrice,
                   sub: 'Pay once. Yours forever.',
                 ),

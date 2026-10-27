@@ -80,4 +80,17 @@ $bot = $sheet.GetPixel(440, 690)
 Write-Host ("splash top  #{0:X2}{1:X2}{2:X2}" -f $top.R, $top.G, $top.B)
 Write-Host ("splash bottom #{0:X2}{1:X2}{2:X2}" -f $bot.R, $bot.G, $bot.B)
 Write-Host ("icon orange #{0:X2}{1:X2}{2:X2}" -f $orange.R, $orange.G, $orange.B)
+# ---- splash and sign up art: exact crops of the sheet (status bar and phone frame left out) ----
+function Save-Crop([int]$x, [int]$y, [int]$w, [int]$h, [int]$scale, [string]$name) {
+  $b = New-Canvas ($w * $scale) ($h * $scale)
+  $gg = [System.Drawing.Graphics]::FromImage($b); Set-Quality $gg
+  $gg.DrawImage($sheet, (New-Object System.Drawing.Rectangle(0, 0, ($w * $scale), ($h * $scale))), $x, $y, $w, $h, [System.Drawing.GraphicsUnit]::Pixel)
+  $gg.Dispose()
+  $b.Save((Join-Path $root "assetsimg$name.png"), [System.Drawing.Imaging.ImageFormat]::Png)
+  $b.Save((Join-Path $root ('assets\img\' + $name + '.png')), [System.Drawing.Imaging.ImageFormat]::Png)
+}
+Save-Crop 412 58 318 640 3 splash_art
+Save-Crop 802 96 228 174 4 login_top
+Write-Host ('login cream #{0:X2}{1:X2}{2:X2}' -f $sheet.GetPixel(815,100).R, $sheet.GetPixel(815,100).G, $sheet.GetPixel(815,100).B)
+Save-Crop 770 486 292 214 3 login_bottom
 $sheet.Dispose()

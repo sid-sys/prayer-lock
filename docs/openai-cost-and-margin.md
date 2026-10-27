@@ -86,3 +86,30 @@ To protect your margin (I can build these next):
 2. **Firebase App Check**, so only the real app can call the function.
 3. **A monthly budget limit on OpenAI** (Settings > Limits). Set it to, for example, $20.
 4. Keep `max_tokens` at 160 (already done).
+
+
+## 7. Update 27 Oct 2026: new prices and longer prayers
+
+Prices: Pro Monthly $4.99, Pro Yearly $29.99, Pro Lifetime $49.99.
+Prayers are now 4 to 6 sentences with a verse, so one prayer costs about **$0.0001** (worst case $0.00017).
+
+| Plan | Per month | After 15% store cut | After 30% store cut | Margin after AI (15% / 30%) |
+|---|---|---|---|---|
+| Monthly | $4.99 | $4.24 | $3.49 | 85% / 70% |
+| Yearly | $2.50 | $2.12 | $1.75 | 85% / 70% |
+| Lifetime (spread over 3 years) | $1.39 | $1.18 | $0.97 | 84% / 69% |
+
+AI cost per user per month: typical (120 prayers) $0.012, heavy (450) $0.045, extreme (900) $0.15.
+Lifetime over 5 years: profit about $41.8 for a typical user, about $33.3 for an extreme user (15% cut).
+
+Fixed costs about $12.25 a month (Apple $99 a year plus small Firebase items).
+Break-even: 3 monthly, 6 yearly or 11 lifetime buyers (15% cut), about 4, 8 or 13 with a 30% cut.
+
+Mix of 60% yearly and 40% monthly, typical use, profit after the store cut, AI and fixed costs:
+
+| Paying users | Profit / month (15% cut) | Margin | Profit / month (30% cut) | Margin |
+|---|---|---|---|---|
+| 25 | $62 | 71% | $49 | 56% |
+| 100 | $284 | 81% | $231 | 66% |
+| 500 | $1,467 | 84% | $1,205 | 69% |
+| 1,000 | $2,947 | 84% | $2,423 | 69% |
