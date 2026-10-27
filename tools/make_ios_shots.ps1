@@ -1,4 +1,4 @@
-# Makes the App Store iPhone screenshots: 1320 x 2868 PNG (iPhone 6.9 inch).
+﻿# Makes the App Store iPhone screenshots: 1320 x 2868 PNG (iPhone 6.9 inch).
 # Orange background, a caption, and a real iPhone simulator screenshot in a phone frame.
 #
 # 1. Run the GitHub workflow "iOS simulator screenshots" and download its artifact.
@@ -20,7 +20,7 @@ $shots = @(
   @('home.png',        'Build a daily prayer streak', 'Morning, night and every pause counts'),
   @('compare.png',     'Your time, with and without', 'See your year with Prayer Lock'),
   @('insights_a.png',  'Take your time back',         'See how many minutes stayed yours'),
-  @('insights_b.png',  'Know your locked apps',       'How often each app paused you, and for how long'),
+  @('insights_b.png',  'Know your locked apps',       'How often each app paused you'),
   @('insights_c.png',  'Understand your heart',       'Your feelings and closeness over time'),
   @('badges.png',      'Earn badges for faithfulness','Celebrate every step with God')
 )
@@ -85,3 +85,4 @@ foreach ($s in $shots) {
   Write-Host "saved $name ($W x $H)"
   $g.Dispose(); $bmp.Dispose(); $shot.Dispose()
 }
+

@@ -1,4 +1,4 @@
-# Cuts the app icon, logo and the praying girl out of the branding sheet
+﻿# Cuts the app icon, logo and the praying girl out of the branding sheet
 # ("Prayer Lock App Branding Showcase.png", 1536 x 1024) into the app's asset files.
 # The sheet is small, so the results are soft. Replace the files with the
 # original high resolution art when you have it, and run `dart run flutter_launcher_icons`.
@@ -28,14 +28,14 @@ function Get-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) 
 }
 
 # ---- app icon: the squircle on the sheet is x 45..370, y 176..509 ----
-$src = New-Object System.Drawing.Rectangle(52, 183, 311, 319)   # a little inside the edge
+$src = New-Object System.Drawing.Rectangle(82, 218, 251, 251)   # inside the baked rounded corners, so no outline shows
 $orange = $sheet.GetPixel(75, 215)                               # sampled from inside the icon
 # full-bleed 1024 icon: orange field + the art clipped to a rounded square
 $icon = New-Canvas 1024 1024
 $g = [System.Drawing.Graphics]::FromImage($icon); Set-Quality $g
 $g.Clear($orange)
-$clip = Get-RoundedPath 0 0 1024 1024 250
-$g.SetClip($clip)
+# full square: iPhone and Android round the corners themselves
+
 $g.DrawImage($sheet, (New-Object System.Drawing.Rectangle(0, 0, 1024, 1024)), $src.X, $src.Y, $src.Width, $src.Height, [System.Drawing.GraphicsUnit]::Pixel)
 $g.Dispose()
 $icon.Save((Join-Path $root 'assets\icon\icon.png'), [System.Drawing.Imaging.ImageFormat]::Png)
@@ -94,3 +94,6 @@ Save-Crop 802 96 228 174 4 login_top
 Write-Host ('login cream #{0:X2}{1:X2}{2:X2}' -f $sheet.GetPixel(815,100).R, $sheet.GetPixel(815,100).G, $sheet.GetPixel(815,100).B)
 Save-Crop 770 486 292 214 3 login_bottom
 $sheet.Dispose()
+
+
+
